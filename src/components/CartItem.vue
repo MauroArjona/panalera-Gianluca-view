@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { getProductImage } from '@/utils/productImage'
 import type { CartItem } from '@/types'
 
-defineProps<{
+const props = defineProps<{
   item: CartItem
   index: number
 }>()
@@ -10,14 +12,16 @@ const emit = defineEmits<{
   remove: [index: number]
   updateQty: [index: number, qty: number]
 }>()
+
+const productImage = computed(() => getProductImage(props.item.product))
 </script>
 
 <template>
   <div class="flex gap-4 py-4 border-b border-gray-100 last:border-0">
     <!-- Product image -->
-    <router-link :to="`/product/${item.product.slug}`" class="shrink-0">
+    <router-link :to="`/product/${item.product.id}`" class="shrink-0">
       <img
-        :src="item.product.image"
+        :src="productImage"
         :alt="item.product.name"
         class="w-20 h-20 object-cover rounded"
       />
@@ -26,7 +30,7 @@ const emit = defineEmits<{
     <!-- Details -->
     <div class="flex-1 min-w-0">
       <router-link
-        :to="`/product/${item.product.slug}`"
+        :to="`/product/${item.product.id}`"
         class="font-semibold text-gray-800 hover:text-brand transition text-sm line-clamp-2"
       >
         {{ item.product.name }}

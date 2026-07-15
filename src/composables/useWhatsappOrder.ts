@@ -1,7 +1,7 @@
-import type { CartItem } from '@/stores/cart'
+import type { CartItem } from '@/types'
 
 interface WhatsappOrderOptions {
-  phone: string
+  phone?: string
   items: CartItem[]
   shipping: number
   total: number
@@ -9,8 +9,17 @@ interface WhatsappOrderOptions {
 }
 
 function money(value: number) {
-  return `$${value.toFixed(2)}`
+  return `$${value.toFixed(0)}`
 }
+
+function getPublicProductImage(item: CartItem) {
+  const image = item.product.image?.trim()
+    || item.product.images?.find((url) => url.trim().length > 0)?.trim()
+    || ''
+
+  return image.startsWith('http') ? image : ''
+}
+
 
 export function buildWhatsappOrderMessage({
   items,
@@ -19,32 +28,32 @@ export function buildWhatsappOrderMessage({
   productUrl,
 }: WhatsappOrderOptions) {
   const lines = [
-    '🛒 Nuevo pedido',
+    'Hola! Pedido Web:',
     '',
     ...items.map((item) => {
       const product = item.product
+      const image = getPublicProductImage(item)
+      const details = [
+        item.selectedSize ? `Talle: ${item.selectedSize}` : '',
+        item.selectedColor?.name ? `Color: ${item.selectedColor.name}` : '',
+      ].filter(Boolean)
 
       return [
-        product.name,
-        `• Cantidad: ${item.quantity}`,
-        item.selectedSize ? `• Talle: ${item.selectedSize}` : '',
-        item.selectedColor?.name ? `• Color: ${item.selectedColor.name}` : '',
-        `• Precio: ${money(product.price)}`,
-        product.image ? `• Imagen: ${product.image}` : '',
-        `• Producto: ${productUrl(item)}`,
+        `(Cantidad: ${item.quantity}) ${product.name} - ${money(product.price)}`,
+        details.length ? details.join(' - ') : '',
+        image ? `Ver foto: ${image}` : `Ver producto: ${productUrl(item)}`,
       ].filter(Boolean).join('\n')
     }),
     '',
-    '─────────────────',
-    `🚚 Envío: ${shipping === 0 ? 'GRATIS' : money(shipping)}`,
-    `💰 Total: ${money(total)}`,
+    shipping > 0 ? `Envio: ${money(shipping)}` : '',
+    `Total: ${money(total)}`,
   ]
 
   return lines.join('\n\n')
 }
 
 export function getWhatsappOrderUrl(options: WhatsappOrderOptions) {
-  const phone = options.phone.replace(/\D/g, '')
+  const phone = (options.phone ?? '').replace(/\D/g, '')
   const message = buildWhatsappOrderMessage(options)
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`

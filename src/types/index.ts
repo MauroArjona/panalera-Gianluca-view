@@ -1,91 +1,42 @@
-// ─── Product ──────────────────────────────────────────────────────────────────
-export interface Product {
-  id: number
-  name: string
-  slug: string
-  price: number
-  originalPrice?: number
-  image: string
-  images: string[]
-  rating: number
-  reviewCount: number
-  category: string
-  gender: 'men' | 'women' | 'unisex'
-  sizes: string[]
-  colors: ColorDot[]
-  description: string
-  featured: boolean
-  inStock: boolean
-  tags: string[]
-}
+/**
+ * types/index.ts
+ *
+ * Tipos del frontend alineados con el backend real.
+ * Product refleja ProductoApi del backend (lo que devuelve toApi()).
+ * CartItem y ColorDot se mantienen igual — son tipos del frontend puro.
+ */
 
+// ─── Re-export desde client para no importar de dos lugares ──────────────────
+export type {
+  Product,
+  ProductFilters,
+  ProductPayload,
+  ProductSize,
+  Categoria,
+  Subcategoria,
+  User,
+  Venta,
+  VentaItem,
+  CreateVentaPayload,
+} from '@/api/client'
+
+// ─── ColorDot: usado por el carrito y ProductCard ─────────────────────────────
+/**
+ * El backend no tiene un campo "colors" en Product.
+ * El carrito guarda el color seleccionado como { name, hex }
+ * que el usuario elige desde la UI (colores del catálogo).
+ */
 export interface ColorDot {
   name: string
   hex: string
 }
 
-// ─── Cart ─────────────────────────────────────────────────────────────────────
+// ─── CartItem ─────────────────────────────────────────────────────────────────
+import type { Product } from '@/api/client'
+
 export interface CartItem {
   product: Product
   quantity: number
   selectedSize: string
   selectedColor: ColorDot
-}
-
-// ─── Order ────────────────────────────────────────────────────────────────────
-export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-
-export interface Order {
-  id: string
-  items: CartItem[]
-  total: number
-  status: OrderStatus
-  createdAt: string
-  shippingAddress: ShippingAddress
-}
-
-export interface ShippingAddress {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-}
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-export interface User {
-  id: number
-  name: string
-  email: string
-  avatar?: string
-}
-
-// ─── API ──────────────────────────────────────────────────────────────────────
-export interface ApiResponse<T> {
-  data: T
-  message?: string
-  success: boolean
-}
-
-export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
-  page: number
-  perPage: number
-  totalPages: number
-}
-
-export interface ProductFilters {
-  category?: string
-  gender?: string
-  minPrice?: number
-  maxPrice?: number
-  search?: string
-  sortBy?: 'featured' | 'price_asc' | 'price_desc' | 'name_asc' | 'rating'
-  page?: number
-  perPage?: number
 }

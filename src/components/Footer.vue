@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
-const email = ref('')
-const subscribed = ref(false)
-
-function subscribe() {
-  if (email.value.trim()) {
-    subscribed.value = true
-    email.value = ''
-    setTimeout(() => (subscribed.value = false), 3000)
-  }
-}
+const productLinks = [
+  { label: 'Pañales', query: { category: 'Panales' } },
+  { label: 'Higiene', query: { category: 'Higiene' } },
+  { label: 'Accesorios', query: { category: 'Accesorios' } },
+]
 </script>
 
 <template>
@@ -21,25 +14,25 @@ function subscribe() {
         <!-- Marca -->
         <div>
           <h2 class="text-brand text-xl font-bold border-b border-gray-600 pb-3 mb-4">
-            Calzados CR
+            Panalera Gianluca
           </h2>
 
           <ul class="space-y-2 text-sm">
             <li class="flex items-start gap-2">
               <i class="fa fa-map-marker-alt mt-0.5 w-4 shrink-0" />
-              <span>Belgrano, 855 | Monseñor Enrique Angelelli, 2860</span>
+              <span>Elio Medrano 2210</span>
             </li>
 
             <li>
               <a
-                href="tel:+5492975381382"
+                href="tel:+5492975011424"
                 class="flex items-center gap-2 hover:text-white transition"
               >
                 <i class="fa fa-phone w-4" />
-                +54 9 2975381382
+                +54 9 2975011424
               </a>
             </li>
-
+            <!--
             <li>
               <a
                 href="mailto:elvissscabj1223@gmail.com"
@@ -48,7 +41,7 @@ function subscribe() {
                 <i class="fa fa-envelope w-4" />
                 elvissscabj1223@gmail.com
               </a>
-            </li>
+            </li>  -->
           </ul>
         </div>
 
@@ -60,14 +53,14 @@ function subscribe() {
 
           <ul class="space-y-2 text-sm">
             <li
-              v-for="item in ['Calzados', 'Indumentaria', 'Hogar', 'Tecnologia']"
-              :key="item"
+              v-for="item in productLinks"
+              :key="item.label"
             >
               <router-link
-                :to="{ path: '/shop', query: { search: item } }"
+                :to="{ path: '/shop', query: item.query }"
                 class="hover:text-white transition"
               >
-                {{ item }}
+                {{ item.label }}
               </router-link>
             </li>
           </ul>
@@ -110,10 +103,10 @@ function subscribe() {
         <ul class="flex items-center gap-3">
           <li
             v-for="{ icon, href } in [
-              { icon: 'fab fa-facebook-f', href: 'https://www.facebook.com/share/1GRk7LwN9Y/' },
-              { icon: 'fab fa-instagram', href: 'https://www.instagram.com/calzados_cr_ea?igsh=eWlxaXZ2NDN6MDMx' },
-              { icon: 'fab fa-tiktok', href: 'https://www.tiktok.com/@calzadoscr?_r=1&_t=ZS-96CMkDdMMCq' },
-            ]"
+              { icon: 'fab fa-facebook-f', href: 'https://www.facebook.com/share/1BNxtcDYRF/' },
+            //{ icon: 'fab fa-instagram', href: 'https://www.instagram.com/' },
+            //{ icon: 'fab fa-tiktok', href: 'https://www.tiktok.com/' },
+]"
             :key="icon"
           >
             <a
@@ -148,7 +141,7 @@ function subscribe() {
 
     <!-- Copyright -->
     <div class="bg-black py-3 text-center text-xs text-gray-500">
-      &copy; {{ new Date().getFullYear() }} Calzados CR. Todos los derechos reservados.
+      &copy; {{ new Date().getFullYear() }} Panalera Gianluca. Todos los derechos reservados.
     </div>
   </footer>
 </template>

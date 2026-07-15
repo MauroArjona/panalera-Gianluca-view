@@ -2,55 +2,51 @@
 import { ref, onMounted } from 'vue'
 import TheHero from '@/components/TheHero.vue'
 import ProductCard from '@/components/ProductCard.vue'
-import { productApi, catalogApi } from '@/api/client'
-import type { Product, Categoria } from '@/api/client'
+import { productApi } from '@/api/client'
+import type { Product } from '@/api/client'
 
-// ─── Categorías estáticas ────────────────────────────────────────────────────
 interface StaticCategoria {
-  nombre: string   // valor que se pasa como query param al shop
-  label: string    // texto visible en la tarjeta
-  imagen: string   // URL pública o ruta de /assets
+  nombre: string
+  label: string
+  icon: string
+  tone: string
+  text: string
 }
 
 const STATIC_CATEGORIAS: StaticCategoria[] = [
-{
-  nombre: 'Tecnologia',
-  label: 'Tecnología',
-  imagen: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80',
-},
-{
-  nombre: 'Calzados',
-  label: 'Calzados',
-  imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
-},
-{
-  nombre: 'Indumentaria',
-  label: 'Indumentaria',
-  imagen: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80',
-},
+  {
+    nombre: 'Panales',
+    label: 'Panales',
+    icon: 'fa-baby',
+    tone: 'bg-sky-50 text-sky-600 border-sky-100',
+    text: 'Marcas y talles para cada etapa.',
+  },
+  {
+    nombre: 'Higiene',
+    label: 'Higiene',
+    icon: 'fa-hand-sparkles',
+    tone: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    text: 'Toallitas, oleos y cuidado diario.',
+  },
+  {
+    nombre: 'Accesorios',
+    label: 'Accesorios',
+    icon: 'fa-bottle-droplet',
+    tone: 'bg-amber-50 text-amber-600 border-amber-100',
+    text: 'Mamaderas, chupetes y esenciales.',
+  },
 ]
 
-// ────────────────────────────────────────────────────────────────────────────
-
-const featured   = ref<Product[]>([])
+const featured = ref<Product[]>([])
 const categorias = ref<StaticCategoria[]>([])
-const loading    = ref(true)
+const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [feat, cats] = await Promise.all([
-      productApi.getFeatured(),
-      catalogApi.listCategorias(),
-    ])
-    featured.value = feat
-
-    // Tomamos solo las categorías estáticas cuyos nombres existen en el backend.
-    
+    featured.value = await productApi.getFeatured()
     categorias.value = STATIC_CATEGORIAS
-
   } catch (e) {
     console.error('Error cargando home:', e)
-    // Igual mostramos las categorías estáticas aunque falle la API
     categorias.value = STATIC_CATEGORIAS
   } finally {
     loading.value = false
@@ -59,66 +55,101 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Hero Carousel -->
   <TheHero />
 
-  <!-- Categorías del Mes -->
-  <section class="max-w-7xl mx-auto px-4 py-14">
-    <div class="text-center mb-10">
-      <h2 class="text-3xl font-bold text-gray-800">Categorías del Mes</h2>
-      <p class="text-gray-500 mt-2 max-w-lg mx-auto">
-        Explorá nuestras categorías más populares. Algo para cada estilo y ocasión.
-      </p>
-    </div>
-
-    <!-- Skeleton -->
-    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-      <div v-for="n in 3" :key="n" class="flex flex-col items-center gap-3 animate-pulse">
-        <div class="w-40 h-40 rounded-full bg-gray-200" />
-        <div class="h-4 bg-gray-200 rounded w-24" />
-        <div class="h-8 bg-gray-200 rounded w-20" />
+  <section class="bg-gradient-to-b from-sky-50/70 to-white py-10">
+    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="info-glow-card info-glow-sky flex items-center gap-3 rounded-lg border border-sky-100 bg-white px-4 py-3 shadow-sm">
+        <span class="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center">
+          <i class="fa fa-truck-fast" />
+        </span>
+        <div>
+          <p class="font-semibold text-gray-800 text-sm">Envios</p>
+          <p class="text-xs text-gray-500">Tomamos pedidos hasta las 18 hs</p>
+        </div>
       </div>
-    </div>
-
-    <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-      <div
-        v-for="cat in categorias"
-        :key="cat.nombre"
-        class="flex flex-col items-center text-center group"
-      >
-        <router-link :to="{ path: '/shop', query: { categoria: cat.nombre } }" class="block">
-          <div class="w-40 h-40 rounded-full overflow-hidden border-4 border-gray-200 group-hover:border-brand transition-all duration-300 shadow">
-            <img
-              :src="cat.imagen"
-              :alt="cat.label"
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-        </router-link>
-
-        <h3 class="mt-4 font-semibold text-lg text-gray-800">{{ cat.label }}</h3>
-
-        <router-link
-          :to="{ path: '/shop', query: { categoria: cat.nombre } }"
-          class="btn-primary mt-3 text-sm px-6 py-2"
-        >
-          Ver categoría
-        </router-link>
+      <div class="info-glow-card info-glow-emerald flex items-center gap-3 rounded-lg border border-emerald-100 bg-white px-4 py-3 shadow-sm">
+        <span class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+          <i class="fa fa-house-chimney" />
+        </span>
+        <div>
+          <p class="font-semibold text-gray-800 text-sm">Retiros</p>
+          <p class="text-xs text-gray-500">En domicilio de 8 a 22 hs</p>
+        </div>
+      </div>
+      <div class="info-glow-card info-glow-amber flex items-center gap-3 rounded-lg border border-amber-100 bg-white px-4 py-3 shadow-sm">
+        <span class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+          <i class="fa fa-tags" />
+        </span>
+        <div>
+          <p class="font-semibold text-gray-800 text-sm">Promos para el mes</p>
+          <p class="text-xs text-gray-500">Combos y destacados</p>
+        </div>
+      </div>
+      <div class="info-glow-card info-glow-rose flex items-center gap-3 rounded-lg border border-rose-100 bg-white px-4 py-3 shadow-sm">
+        <span class="w-10 h-10 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center">
+          <i class="fa fa-heart" />
+        </span>
+        <div>
+          <p class="font-semibold text-gray-800 text-sm">Cuidado diario</p>
+          <p class="text-xs text-gray-500">Todo para bebes y familias</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Productos Destacados -->
-  <section class="bg-gray-50 py-14">
+  <section class="max-w-7xl mx-auto px-4 py-14">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+      <div>
+        <p class="text-sm font-semibold text-brand mb-1">Comprar por categoria</p>
+        <h2 class="text-3xl font-bold text-gray-900">Lo esencial para el bebe</h2>
+      </div>
+      <p class="text-gray-500 max-w-xl">
+        Encontra rapido pañales, higiene y accesorios por marca, talle o necesidad.
+      </p>
+    </div>
+
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div v-for="n in 3" :key="n" class="rounded-lg border border-gray-100 bg-white p-5 animate-pulse">
+        <div class="w-12 h-12 rounded-full bg-gray-200 mb-4" />
+        <div class="h-4 bg-gray-200 rounded w-24" />
+        <div class="h-3 bg-gray-200 rounded w-4/5 mt-3" />
+      </div>
+    </div>
+
+    <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <router-link
+        v-for="cat in categorias"
+        :key="cat.nombre"
+        :to="{ path: '/shop', query: { category: cat.nombre } }"
+        class="group rounded-lg border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <span :class="['w-12 h-12 rounded-full border flex items-center justify-center mb-4', cat.tone]">
+              <i :class="['fa', cat.icon]" />
+            </span>
+            <h3 class="font-bold text-lg text-gray-900">{{ cat.label }}</h3>
+            <p class="text-sm text-gray-500 mt-1">{{ cat.text }}</p>
+          </div>
+          <i class="fa fa-arrow-right text-gray-300 group-hover:text-brand transition mt-2" />
+        </div>
+      </router-link>
+    </div>
+  </section>
+
+  <section class="bg-sky-50/60 py-14">
     <div class="max-w-7xl mx-auto px-4">
-      <div class="text-center mb-10">
-        <h2 class="text-3xl font-bold text-gray-800">Productos Destacados</h2>
-        <p class="text-gray-500 mt-2 max-w-lg mx-auto">
-          Lo mejor de nuestra última colección, seleccionado especialmente para vos.
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+        <div>
+          <p class="text-sm font-semibold text-brand mb-1">Recomendados</p>
+          <h2 class="text-3xl font-bold text-gray-900">Productos destacados</h2>
+        </div>
+        <p class="text-gray-500 max-w-xl">
+          Seleccionados para resolver la compra diaria sin dar tantas vueltas.
         </p>
       </div>
 
-      <!-- Skeleton -->
       <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <div v-for="n in 3" :key="n" class="bg-white rounded shadow-sm animate-pulse">
           <div class="h-52 bg-gray-200 rounded-t" />
@@ -146,25 +177,67 @@ onMounted(async () => {
       </div>
     </div>
   </section>
-
-  <!-- Por qué elegirnos -->
-  <section class="max-w-7xl mx-auto px-4 py-14">
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center max-w-3xl mx-auto place-items-center">
-      <div
-        v-for="item in [
-          { icon: 'fa-truck',   title: 'Envío gratis ',  sub: 'En compras mayores a $5000' },
-          { icon: 'fa-headset', title: 'Soporte 24/7',  sub: 'Siempre disponibles para ayudarte' },
-        ]"
-        :key="item.title"
-      >
-        <div class="flex flex-col items-center gap-3">
-          <div class="w-14 h-14 bg-brand/10 rounded-full flex items-center justify-center">
-            <i :class="['fa', item.icon, 'text-brand text-xl']" />
-          </div>
-          <h4 class="font-semibold text-gray-800">{{ item.title }}</h4>
-          <p class="text-xs text-gray-500">{{ item.sub }}</p>
-        </div>
-      </div>
-    </div>
-  </section>
 </template>
+
+<style scoped>
+.info-glow-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  animation: float-soft 4.5s ease-in-out infinite;
+}
+
+.info-glow-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  opacity: 0.75;
+  filter: blur(12px);
+  animation: glow-breathe 2.8s ease-in-out infinite;
+}
+
+.info-glow-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: skewX(-18deg);
+  animation: shine-pass 4.2s ease-in-out infinite;
+}
+
+.info-glow-sky::before {
+  background: #7dd3fc;
+}
+
+.info-glow-emerald::before {
+  background: #86efac;
+}
+
+.info-glow-amber::before {
+  background: #fde68a;
+}
+
+.info-glow-rose::before {
+  background: #fecdd3;
+}
+
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes shine-pass {
+  0%, 55% { left: -45%; opacity: 0; }
+  65% { opacity: 1; }
+  100% { left: 115%; opacity: 0; }
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+</style>

@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { productApi } from '@/api/client'
+import { productApi, type Product } from '@/api/client'
 import { MOCK_HERO_SLIDES } from '@/data/mock'
+import { getProductImage } from '@/utils/productImage'
 
 const slides = ref<any[]>([])
 const current = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 
-function productToSlide(product: any) {
+function productToSlide(product: Product) {
   return {
     id: product.id,
     title: product.name,
     subtitle: 'Producto destacado',
-    description: product.description || 'Descubre este increíble producto.',
-    image: product.image,
+    description: 'Descubre este producto destacado.',
+    image: getProductImage(product),
     ctaLabel: 'Ver producto',
-    ctaLink: `/product/${product.slug}`,
+    ctaLink: `/product/${product.id}`,
   }
 }
 

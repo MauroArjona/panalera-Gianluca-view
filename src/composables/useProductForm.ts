@@ -1,38 +1,8 @@
 import { ref, computed } from 'vue'
-import { productApi, catalogApi } from '@/api/client'
-import type { Product, ProductPayload, Subcategoria, Color } from '@/api/client'
+import { uploadImage } from '@/api/client'
+import { normalizeProductImageUrl } from '@/utils/productImage'
+import type { Product, ProductPayload, ProductSize } from '@/api/client'
 
-const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000')
-
-// ─── Upload base ───────────────────────────────────────────────────────────────
-export async function uploadImageFile(file: File, onProgress?: (p: number) => void): Promise<string> {
-  const formData = new FormData()
-  formData.append('imagen', file)
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', `${BASE_URL}/upload/imagen`)
-
-    const token = localStorage.getItem('auth_token')
-    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-
-    xhr.upload.addEventListener('progress', (e) => {
-      if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100))
-    })
-
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        resolve(JSON.parse(xhr.responseText).url)
-      } else {
-        reject(new Error(JSON.parse(xhr.responseText).message ?? 'Error al subir imagen'))
-      }
-    }
-    xhr.onerror = () => reject(new Error('Error de red'))
-    xhr.send(formData)
-  })
-}
-
-// ─── Extra images slot type ────────────────────────────────────────────────────
 export interface ExtraImage {
   file: File | null
   preview: string
@@ -45,210 +15,141 @@ export function makeEmptySlot(): ExtraImage {
   return { file: null, preview: '', url: '', uploading: false, progress: 0 }
 }
 
-// ─── Composable ───────────────────────────────────────────────────────────────
 export function useProductForm() {
-  const MAX_EXTRA = 5
+  const MAX_IMAGES = 6
 
-  // Catalog
-  const subcategorias = ref<Subcategoria[]>([])
-  const colores       = ref<Color[]>([])
-
-  const categoriasUnicas = computed<string[]>(() => {
-    const set = new Set<string>()
-    subcategorias.value.forEach((s) => { if (s.categoria?.nombre) set.add(s.categoria.nombre) })
-    return Array.from(set).sort()
-  })
-
-  async function loadCatalog() {
-    const [subRes, colRes] = await Promise.all([
-      catalogApi.listSubcategorias(),
-      catalogApi.listColores(),
-    ])
-    subcategorias.value = subRes
-    colores.value       = colRes
-  }
-
-  // Form fields
-  const fNombre          = ref('')
-  const fCodigo          = ref('')
-  const fPrecio          = ref<number>(0)
-  const fPrecioAnterior  = ref<number | undefined>(undefined)
-  const fDescripcion     = ref('')
-  const fSubcategoriaId  = ref('')
-  const fActivo          = ref(true)
-  const fDestacado       = ref(false)
-  const fEnCarrusel      = ref(false)
-  const fTalles          = ref('')
-  const fColorIds        = ref<string[]>([])
-  const fImagenPrincipal = ref('')
-
-  // Main image upload state
-  const uploading       = ref(false)
-  const uploadProgress  = ref(0)
-  const imageFile       = ref<File | null>(null)
-  const imagePreview    = ref('')
-
-  // Extra images
-  const extraImages = ref<ExtraImage[]>([makeEmptySlot()])
-
-  const isUploading = computed(() =>
-    uploading.value || extraImages.value.some((s) => s.uploading)
-  )
-
-  // Validation
+  const fNombre = ref('')
+  const fPrecio = ref<number>(0)
+  const fPrecioAnterior = ref<number | undefined>(undefined)
+  const fSubcategoriaId = ref<number | null>(null)
+  const fTalles = ref<ProductSize[]>([{ talle: '', stock: 0 }])
+  const fIsPromo = ref(false)
+  const fDestacado = ref(false)
+  const fEnCarrusel = ref(false)
+  const imageSlots = ref<ExtraImage[]>([makeEmptySlot()])
   const formErrors = ref<Record<string, string>>({})
+
+  const isUploading = computed(() => imageSlots.value.some((slot) => slot.uploading))
 
   function validate(): boolean {
     formErrors.value = {}
     if (!fNombre.value.trim()) formErrors.value.nombre = 'El nombre es obligatorio.'
-    if (!fCodigo.value.trim()) formErrors.value.codigo = 'El código es obligatorio.'
-    if (fPrecio.value <= 0)    formErrors.value.precio = 'El precio debe ser mayor a 0.'
+    if (fPrecio.value <= 0) formErrors.value.precio = 'El precio debe ser mayor a 0.'
+    if (!fSubcategoriaId.value) formErrors.value.subcategoria = 'La subcategoria es obligatoria.'
+    if (!imageSlots.value.some((slot) => slot.url || slot.preview)) formErrors.value.imagen = 'Agrega al menos una imagen.'
+    if (fTalles.value.some((item) => item.stock < 0)) formErrors.value.talles = 'El stock no puede ser negativo.'
     return Object.keys(formErrors.value).length === 0
   }
 
   function buildPayload(): ProductPayload {
-    const talles      = fTalles.value.split(',').map((s) => s.trim()).filter(Boolean)
-    const adicionales = extraImages.value.map((s) => s.url).filter(Boolean)
-    const todasImagenes = [...(fImagenPrincipal.value ? [fImagenPrincipal.value] : []), ...adicionales]
-    const variantes   = fColorIds.value.map((color_id) => ({ color_id }))
-
     return {
-      codigo:          fCodigo.value.trim().toUpperCase(),
-      nombre:          fNombre.value.trim(),
-      descripcion:     fDescripcion.value.trim() || undefined,
-      precio:          fPrecio.value,
-      precio_anterior: fPrecioAnterior.value ?? null,
-      subcategoria_id: fSubcategoriaId.value || null,
-      activo:          fActivo.value,
-      destacado:       fDestacado.value,
-      en_carrusel:     fEnCarrusel.value,
-      imagenesUrls:    todasImagenes,
-      talles:          talles.length ? talles : undefined,
-      variantes:       variantes.length ? variantes : undefined,
+      name: fNombre.value.trim(),
+      price: fPrecio.value,
+      subcategoria_id: fSubcategoriaId.value,
+      images: imageSlots.value.map((slot) => slot.url).filter(Boolean),
+      talles: fTalles.value
+        .map((item) => ({
+          talle: item.talle.trim() || 'Unidad',
+          stock: Number(item.stock ?? 0),
+        }))
+        .filter((item) => item.talle || item.stock > 0),
+      is_promo: fIsPromo.value,
+      destacado: fDestacado.value,
+      en_carrusel: fEnCarrusel.value,
+      old_price: fPrecioAnterior.value ?? null,
     }
   }
 
   function resetForm() {
-    fNombre.value = ''; fCodigo.value = ''; fPrecio.value = 0
-    fPrecioAnterior.value = undefined; fDescripcion.value = ''
-    fSubcategoriaId.value = ''; fActivo.value = true
-    fDestacado.value = false; fEnCarrusel.value = false
-    fTalles.value = ''; fColorIds.value = []
-    fImagenPrincipal.value = ''
-    imageFile.value = null; imagePreview.value = ''
-    uploadProgress.value = 0
-    extraImages.value = [makeEmptySlot()]
+    fNombre.value = ''
+    fPrecio.value = 0
+    fPrecioAnterior.value = undefined
+    fSubcategoriaId.value = null
+    fTalles.value = [{ talle: '', stock: 0 }]
+    fIsPromo.value = false
+    fDestacado.value = false
+    fEnCarrusel.value = false
+    imageSlots.value = [makeEmptySlot()]
     formErrors.value = {}
   }
 
   function populateForm(product: Product) {
-    fNombre.value          = product.name
-    fCodigo.value          = product.codigo
-    fPrecio.value          = product.price
-    fPrecioAnterior.value  = product.originalPrice
-    fDescripcion.value     = product.description
-    fSubcategoriaId.value  = ''
-    fActivo.value          = product.inStock
-    fDestacado.value       = product.featured
-    fEnCarrusel.value      = product.inCarrusel
-    fImagenPrincipal.value = product.image
-    imagePreview.value     = product.image
-    imageFile.value        = null
-    uploadProgress.value   = 0
-
-    const urlsAdicionales = product.images.slice(1)
-    extraImages.value = urlsAdicionales.length
-      ? [
-          ...urlsAdicionales.map((u) => ({ file: null, preview: u, url: u, uploading: false, progress: 0 })),
-          ...(urlsAdicionales.length < MAX_EXTRA ? [makeEmptySlot()] : []),
-        ]
+    fNombre.value = product.name
+    fPrecio.value = product.price
+    fPrecioAnterior.value = product.oldPrice ?? undefined
+    fSubcategoriaId.value = product.subcategoriaId
+    fTalles.value = product.talles.length ? product.talles.map((item) => ({ talle: item.talle, stock: item.stock })) : [{ talle: '', stock: 0 }]
+    fIsPromo.value = product.isPromo
+    fDestacado.value = product.destacado
+    fEnCarrusel.value = product.enCarrusel
+    const productImages = product.images?.length ? product.images : product.image ? [product.image] : []
+    imageSlots.value = productImages.length
+      ? productImages.map((url) => ({ file: null, preview: normalizeProductImageUrl(url), url, uploading: false, progress: 0 }))
       : [makeEmptySlot()]
-
-    fTalles.value   = product.sizes.join(', ')
-    fColorIds.value = product.colors
-      .map((c) => colores.value.find((col) => col.nombre === c.name)?.id ?? '')
-      .filter(Boolean)
+    if (imageSlots.value.length < MAX_IMAGES) imageSlots.value.push(makeEmptySlot())
     formErrors.value = {}
   }
 
-  // Image handlers
-  function onFileChange(e: Event) {
+  function onImageChange(e: Event, idx: number) {
     const file = (e.target as HTMLInputElement).files?.[0]
     if (!file) return
-    imageFile.value    = file
-    imagePreview.value = URL.createObjectURL(file)
-  }
+    imageSlots.value[idx].file = file
+    imageSlots.value[idx].preview = URL.createObjectURL(file)
+    imageSlots.value[idx].url = ''
 
-  async function uploadMainImage(file: File): Promise<string> {
-    uploading.value      = true
-    uploadProgress.value = 0
-    try {
-      return await uploadImageFile(file, (p) => { uploadProgress.value = p })
-    } finally {
-      uploading.value = false
+    if (idx === imageSlots.value.length - 1 && imageSlots.value.length < MAX_IMAGES) {
+      imageSlots.value.push(makeEmptySlot())
     }
   }
 
-  function clearImage() {
-    imageFile.value        = null
-    imagePreview.value     = ''
-    fImagenPrincipal.value = ''
-    uploadProgress.value   = 0
+  function clearImage(idx: number) {
+    imageSlots.value.splice(idx, 1)
+    if (imageSlots.value.length === 0) imageSlots.value.push(makeEmptySlot())
   }
 
-  function onExtraFileChange(e: Event, idx: number) {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (!file) return
-    extraImages.value[idx].file    = file
-    extraImages.value[idx].preview = URL.createObjectURL(file)
-    extraImages.value[idx].url     = ''
-
-    if (idx === extraImages.value.length - 1 && extraImages.value.length < MAX_EXTRA) {
-      extraImages.value.push(makeEmptySlot())
-    }
-  }
-
-  function clearExtraImage(idx: number) {
-    extraImages.value.splice(idx, 1)
-    if (extraImages.value.length === 0) extraImages.value.push(makeEmptySlot())
-  }
-
-  async function uploadExtraImages(): Promise<void> {
-    for (const slot of extraImages.value) {
-      if (!slot.file || !slot.preview) continue
+  async function uploadImages() {
+    for (const slot of imageSlots.value) {
+      if (!slot.file) continue
       slot.uploading = true
-      slot.progress  = 0
+      slot.progress = 0
       try {
-        slot.url       = await uploadImageFile(slot.file, (p) => { slot.progress = p })
+        slot.url = await uploadImage(slot.file, (progress) => { slot.progress = progress })
+      } finally {
         slot.uploading = false
-      } catch (e) {
-        slot.uploading = false
-        throw e
       }
     }
   }
 
-  function toggleColor(id: string) {
-    const idx = fColorIds.value.indexOf(id)
-    if (idx === -1) fColorIds.value.push(id)
-    else fColorIds.value.splice(idx, 1)
+  function addTalle() {
+    fTalles.value.push({ talle: '', stock: 0 })
+  }
+
+  function removeTalle(idx: number) {
+    fTalles.value.splice(idx, 1)
+    if (fTalles.value.length === 0) fTalles.value.push({ talle: '', stock: 0 })
   }
 
   return {
-    // catalog
-    subcategorias, colores, categoriasUnicas, loadCatalog,
-    // fields
-    fNombre, fCodigo, fPrecio, fPrecioAnterior, fDescripcion,
-    fSubcategoriaId, fActivo, fDestacado, fEnCarrusel,
-    fTalles, fColorIds, fImagenPrincipal,
-    // main image
-    uploading, uploadProgress, imageFile, imagePreview,
-    onFileChange, uploadMainImage, clearImage,
-    // extra images
-    extraImages, MAX_EXTRA,
-    onExtraFileChange, clearExtraImage, uploadExtraImages,
-    // form
-    formErrors, validate, buildPayload, resetForm, populateForm,
-    isUploading, toggleColor,
+    MAX_IMAGES,
+    fNombre,
+    fPrecio,
+    fPrecioAnterior,
+    fSubcategoriaId,
+    fTalles,
+    fIsPromo,
+    fDestacado,
+    fEnCarrusel,
+    imageSlots,
+    formErrors,
+    isUploading,
+    validate,
+    buildPayload,
+    resetForm,
+    populateForm,
+    onImageChange,
+    clearImage,
+    uploadImages,
+    addTalle,
+    removeTalle,
   }
 }

@@ -3,8 +3,20 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useToast } from '@/composables/useToast'
-// import { orderApi } from '@/api/client'
-import type { ShippingAddress } from '@/types'
+import { orderApi } from '@/api/client'
+import { getProductImage } from '@/utils/productImage'
+
+interface ShippingAddress {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  state: string
+  zipCode: string
+  country: string
+}
 
 const router = useRouter()
 const cart = useCartStore()
@@ -33,10 +45,11 @@ async function placeOrder() {
       items: cart.items.map((i) => ({
         productId: i.product.id,
         quantity: i.quantity,
+        price: i.product.price,
         size: i.selectedSize,
-        color: i.selectedColor.name,
       })),
-      shippingAddress: { ...address },
+      total: cart.total,
+      estado: 'pendiente',
     })
     cart.clear()
     show('¡Pedido realizado con éxito!', 'success')
@@ -156,7 +169,7 @@ async function placeOrder() {
               :key="`${item.product.id}-${item.selectedSize}`"
               class="flex gap-4 py-3"
             >
-              <img :src="item.product.image" :alt="item.product.name" class="w-14 h-14 rounded object-cover" />
+              <img :src="getProductImage(item.product)" :alt="item.product.name" class="w-14 h-14 rounded object-cover" />
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-800">{{ item.product.name }}</p>
                 <p class="text-xs text-gray-400">{{ item.selectedSize }} · {{ item.selectedColor.name }} · Cantidad {{ item.quantity }}</p>

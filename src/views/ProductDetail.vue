@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useToast } from '@/composables/useToast'
 import { productApi } from '@/api/client'
-import StarRating from '@/components/StarRating.vue'
+import { getProductImage, normalizeProductImageUrl } from '@/utils/productImage'
 import ProductCard from '@/components/ProductCard.vue'
 import type { Product } from '@/api/client'
+import type { ColorDot } from '@/types'
 
 const route = useRoute()
 const cart  = useCartStore()
@@ -17,52 +18,48 @@ const related      = ref<Product[]>([])
 const loading      = ref(true)
 const error        = ref(false)
 
-const selectedImage = ref(0)
 const selectedSize  = ref('')
-const selectedColor = ref<{ name: string; hex: string } | null>(null)
+const selectedColor = ref<ColorDot>({ name: '', hex: '#000000' })
 const quantity      = ref(1)
 const addedToCart   = ref(false)
+const selectedImage = ref('')
 
+// El backend devuelve 'talle' como string simple (ej. "39" o "39,40,41")
+// Parseamos a array para la UI
+const sizesArray = computed<string[]>(() => {
+  if (!product.value?.talle) return []
+  return product.value.talle
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s && s.toLowerCase() !== 'unidad')
+})
 
-function normalizeHexColor(value?: string | null) {
-  const color = value?.trim() ?? ''
-
-  if (/^#[0-9a-f]{6}$/i.test(color)) return color
-
-  if (/^#[0-9a-f]{3}$/i.test(color)) {
-    const [, r, g, b] = color
-    return `#${r}${r}${g}${g}${b}${b}`
-  }
-
-  return '#ffffff'
-}
-
-function colorDotSrc(value?: string | null) {
-  const color = normalizeHexColor(value)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="${color}"/></svg>`
-
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-}
-
-async function loadProduct(slug: string) {
+async function loadProduct(id: string) {
   loading.value = true
   error.value   = false
   product.value = null
   related.value = []
 
-  try {
-    // getBySlug extrae el código del slug y usa GET /products/codigo/:codigo
-    product.value = await productApi.getBySlug(slug)
+  const numId = Number(id)
+  if (isNaN(numId)) {
+    error.value   = true
+    loading.value = false
+    return
+  }
 
-    // Pre-seleccionar primer talle y color disponibles
-    selectedSize.value  = product.value.sizes[0]   ?? ''
-    selectedColor.value = product.value.colors[0]  ?? null
-    selectedImage.value = 0
+  try {
+    product.value = await productApi.getById(numId)
+
+    // Pre-seleccionar primer talle disponible
+    selectedSize.value = sizesArray.value[0] ?? ''
+
+    // El backend no tiene colores por producto — inicializar vacío
+    selectedColor.value = { name: '', hex: '#000000' }
 
     // Productos relacionados: misma categoría, excluyendo el actual
     const res = await productApi.list({
-      categoria: product.value.category,
-      perPage:   4,
+      category: product.value.category,
+      perPage:  4,
     })
     related.value = res.data.filter((p) => p.id !== product.value!.id).slice(0, 3)
   } catch {
@@ -72,40 +69,37 @@ async function loadProduct(slug: string) {
   }
 }
 
-onMounted(() => loadProduct(route.params.slug as string))
+onMounted(() => loadProduct(route.params.id as string))
 
-// Recargar si navegamos entre productos relacionados
 watch(
-  () => route.params.slug,
-  (slug) => { if (slug) loadProduct(slug as string) },
+  () => route.params.id,
+  (id) => { if (id) loadProduct(id as string) },
 )
 
 function addToCart() {
   if (!product.value) return
-
-  // El cart store espera un objeto compatible; lo mapeamos
-  const productForCart = {
-    ...product.value,
-    // Alias para compatibilidad con el store existente
-    id:    product.value.id as unknown as number,
-    rating:      product.value.rating      ?? 0,
-    reviewCount: product.value.reviewCount ?? 0,
-    tags:        product.value.tags        ?? [],
-    gender:      product.value.gender      ?? 'unisex',
-    featured:    product.value.featured,
-    inStock:     product.value.inStock,
-  }
-
-  cart.add(
-    productForCart as Parameters<typeof cart.add>[0],
-    quantity.value,
-    selectedSize.value,
-    selectedColor.value ?? { name: '', hex: '#000000' },
-  )
+  cart.add(product.value, quantity.value, selectedSize.value, selectedColor.value)
   addedToCart.value = true
   show(`"${product.value.name}" agregado al carrito!`, 'success')
   setTimeout(() => (addedToCart.value = false), 2000)
 }
+
+// Stock: el backend devuelve `stock` numérico
+const inStock = computed(() => (product.value?.stock ?? 0) > 0)
+const productImages = computed(() => {
+  if (!product.value) return []
+  const images = [product.value.image, ...(product.value.images ?? [])]
+    .map((url) => url?.trim())
+    .filter((url): url is string => Boolean(url))
+    .map(normalizeProductImageUrl)
+
+  return Array.from(new Set(images))
+})
+const productImage = computed(() => selectedImage.value || getProductImage(product.value))
+
+watch(productImages, (images) => {
+  selectedImage.value = images[0] ?? ''
+})
 </script>
 
 <template>
@@ -124,9 +118,6 @@ function addToCart() {
     <div v-if="loading" class="grid md:grid-cols-2 gap-12 animate-pulse">
       <div class="space-y-3">
         <div class="bg-gray-200 rounded-lg aspect-square" />
-        <div class="grid grid-cols-4 gap-2">
-          <div v-for="n in 3" :key="n" class="bg-gray-200 rounded aspect-square" />
-        </div>
       </div>
       <div class="space-y-4">
         <div class="h-8 bg-gray-200 rounded w-3/4" />
@@ -146,88 +137,83 @@ function addToCart() {
     <!-- Detalle del producto -->
     <div v-else-if="product" class="grid md:grid-cols-2 gap-12">
 
-      <!-- Galería -->
-      <div>
-        <div class="rounded-lg overflow-hidden bg-gray-100 mb-3">
+      <!-- Imagen principal -->
+      <div class="space-y-3">
+        <div class="rounded-lg overflow-hidden bg-gray-100">
           <img
-            :src="product.images[selectedImage] || product.image"
+            :src="productImage"
             :alt="product.name"
             class="w-full aspect-square object-cover"
           />
         </div>
-        <div v-if="product.images.length > 1" class="grid grid-cols-4 gap-2">
+
+        <div v-if="productImages.length > 1" class="grid grid-cols-5 sm:grid-cols-6 gap-2">
           <button
-            v-for="(img, i) in product.images"
-            :key="i"
-            :class="['rounded overflow-hidden border-2 transition', i === selectedImage ? 'border-brand' : 'border-transparent']"
-            @click="selectedImage = i"
+            v-for="image in productImages"
+            :key="image"
+            type="button"
+            :class="[
+              'aspect-square rounded-md overflow-hidden border-2 bg-gray-100 transition',
+              image === productImage ? 'border-brand' : 'border-transparent hover:border-brand/50',
+            ]"
+            @click="selectedImage = image"
           >
-            <img :src="img" :alt="`vista ${i + 1}`" class="w-full aspect-square object-cover" />
+            <img
+              :src="image"
+              :alt="product.name"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
           </button>
         </div>
       </div>
 
       <!-- Info -->
       <div>
-        <!-- Código badge -->
-        <span class="inline-block mb-2 font-mono text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
-          {{ product.codigo }}
-        </span>
-
         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{{ product.name }}</h1>
 
-        <!-- Categoría / subcategoría -->
-        <p class="text-sm text-gray-400 mb-4">
-          {{ product.category }}
-          <span v-if="product.subcategory"> / {{ product.subcategory }}</span>
-        </p>
+        <!-- Categoría -->
+        <p class="text-sm text-gray-400 mb-4">{{ product.category }}</p>
 
-        <!-- Rating (si existe) -->
-        <div v-if="product.rating" class="flex items-center gap-3 mb-4">
-          <StarRating :rating="product.rating" size="md" />
-          <span class="text-sm text-gray-500">{{ product.reviewCount }} reseñas</span>
-        </div>
+        <p v-if="product.subcategory" class="text-sm text-gray-500 mb-4">
+          <span class="font-medium text-gray-700">Subcategoria:</span> {{ product.subcategory }}
+        </p>
 
         <!-- Precio -->
         <div class="flex items-baseline gap-3 mb-5">
           <span class="text-3xl font-bold text-gray-900">${{ product.price.toFixed(2) }}</span>
-          <span v-if="product.originalPrice" class="text-lg text-gray-400 line-through">
-            ${{ product.originalPrice.toFixed(2) }}
+          <span v-if="product.oldPrice" class="text-lg text-gray-400 line-through">
+            ${{ product.oldPrice.toFixed(2) }}
           </span>
           <span
-            v-if="product.originalPrice"
+            v-if="product.oldPrice"
             class="text-sm font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded"
           >
-            Ahorrás {{ Math.round((1 - product.price / product.originalPrice) * 100) }}%
+            Ahorrás {{ Math.round((1 - product.price / product.oldPrice) * 100) }}%
           </span>
         </div>
-
-        <!-- Descripción -->
-        <p v-if="product.description" class="text-gray-600 leading-relaxed mb-6">
-          {{ product.description }}
-        </p>
 
         <!-- Estado de stock -->
         <div class="mb-5">
           <span
             :class="[
               'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium',
-              product.inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600',
+              inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600',
             ]"
           >
-            <i :class="['fa text-xs', product.inStock ? 'fa-circle-check' : 'fa-circle-xmark']" />
-            {{ product.inStock ? 'En stock' : 'Sin stock' }}
+            <i :class="['fa text-xs', inStock ? 'fa-circle-check' : 'fa-circle-xmark']" />
+            {{ inStock ? `En stock (${product.stock})` : 'Sin stock' }}
           </span>
         </div>
 
-        <!-- Talles -->
-        <div v-if="product.sizes.length > 0" class="mb-5">
+        <!-- Talles (si existen) -->
+        <div v-if="sizesArray.length > 0" class="mb-5">
           <p class="text-sm font-semibold text-gray-700 mb-2">
             Talle: <span class="text-brand">{{ selectedSize }}</span>
           </p>
           <div class="flex flex-wrap gap-2">
             <button
-              v-for="size in product.sizes"
+              v-for="size in sizesArray"
               :key="size"
               :class="[
                 'px-3 py-1.5 border rounded text-sm font-medium transition',
@@ -242,37 +228,6 @@ function addToCart() {
           </div>
         </div>
 
-<!-- Colores -->
-<div v-if="product.colors.length > 0" class="mb-5">
-  <p class="text-sm font-semibold text-gray-700 mb-2">
-    Color: <span class="text-brand">{{ selectedColor?.name }}</span>
-  </p>
-  <div class="relative">
-    <div class="m-2 grid-flow-row gap-2 overflow-x-auto pb-1
-                scrollbar-none [&::-webkit-scrollbar]:hidden">
-      <button
-        v-for="color in product.colors"
-        :key="color.name"
-        :title="color.name"
-        :class="[
-          'shrink-0 w-8 h-8 rounded-full border-2 transition-transform m-1 overflow-hidden bg-transparent p-0',
-          selectedColor?.name === color.name
-            ? 'border-brand scale-110'
-            : 'border-gray-300 hover:border-brand',
-        ]"
-        @click="selectedColor = color"
-      >
-        <img
-          :src="colorDotSrc(color.hex)"
-          alt=""
-          aria-hidden="true"
-          class="product-detail-color-dot h-full w-full rounded-full"
-        />
-      </button>
-    </div>
-  </div>
-</div>
-            
         <!-- Cantidad + Agregar al carrito -->
         <div class="flex items-center gap-4">
           <div class="flex items-center border border-gray-300 rounded overflow-hidden">
@@ -285,7 +240,7 @@ function addToCart() {
             <span class="w-12 text-center font-semibold text-gray-800">{{ quantity }}</span>
             <button
               class="w-10 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
-              @click="quantity++"
+              @click="quantity = Math.min(product.stock, quantity + 1)"
             >
               <i class="fa fa-plus text-xs" />
             </button>
@@ -294,14 +249,14 @@ function addToCart() {
           <button
             :class="[
               'btn-primary flex-1 py-3 text-base transition',
-              addedToCart ? 'bg-green-600' : '',
-              !product.inStock ? 'opacity-50 cursor-not-allowed' : '',
+              addedToCart ? 'bg-brand-600' : '',
+              !inStock ? 'opacity-50 cursor-not-allowed' : '',
             ]"
-            :disabled="!product.inStock"
+            :disabled="!inStock"
             @click="addToCart"
           >
             <i :class="['fa mr-2', addedToCart ? 'fa-check' : 'fa-cart-plus']" />
-            {{ addedToCart ? '¡Agregado!' : product.inStock ? 'Agregar' : 'Sin stock' }}
+            {{ addedToCart ? '¡Agregado!' : inStock ? 'Agregar al carrito' : 'Sin stock' }}
           </button>
 
           <router-link to="/cart" class="btn-outline py-3 px-4">
@@ -309,14 +264,10 @@ function addToCart() {
           </router-link>
         </div>
 
-        <!-- Tags -->
-        <div v-if="product.tags && product.tags.length > 0" class="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
-          <span
-            v-for="tag in product.tags"
-            :key="tag"
-            class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded"
-          >
-            #{{ tag }}
+        <!-- Promo badge -->
+        <div v-if="product.isPromo" class="mt-4">
+          <span class="inline-block bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full">
+            🔥 Promoción
           </span>
         </div>
       </div>
@@ -331,13 +282,3 @@ function addToCart() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.product-detail-color-dot {
-  display: block;
-  object-fit: cover;
-  background: transparent !important;
-  forced-color-adjust: none;
-  filter: none !important;
-}
-</style>

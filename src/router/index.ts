@@ -24,7 +24,9 @@ const router = createRouter({
       meta: { title: 'Shop' },
     },
     {
-      path: '/product/:slug',
+      // Cambiado de /product/:slug a /product/:id — el backend identifica
+      // productos por ID numérico, no por slug/código
+      path: '/product/:id',
       name: 'product-detail',
       component: () => import('@/views/ProductDetail.vue'),
       meta: { title: 'Product' },
@@ -45,7 +47,7 @@ const router = createRouter({
       path: '/orders',
       name: 'orders',
       component: () => import('@/views/Orders.vue'),
-      meta: { title: 'My Orders', requiresAuth: true },
+      meta: { title: 'Mis Pedidos', requiresAuth: true },
     },
     {
       path: '/about',
@@ -79,19 +81,13 @@ const router = createRouter({
   ],
 })
 
-// ─── Auth guard ───────────────────────────────────────────────────────────────
 router.beforeEach((to) => {
-  // Update document title
-  document.title = `${to.meta.title ?? 'Page'} | Calzados CR`
-
+  document.title = `${to.meta.title ?? 'Pagina'} | Panalera Gianluca`
   const auth = useAuthStore()
 
-  // Redirigir al inicio si ya está autenticado e intenta ir a /login
   if (to.meta.guestOnly && auth.isAuthenticated) {
     return { name: 'home' }
   }
-
-  // Redirigir a /login si requiere autenticación y no está logueado
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }

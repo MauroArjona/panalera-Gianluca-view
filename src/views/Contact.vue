@@ -15,7 +15,7 @@ async function submit() {
     `Mensaje: ${form.message}\n\nEnviado desde el formulario de contacto de la web.`,
   )
 
-  const numero = '5492975381382' // número destino
+  const numero = '5492975011424' // número destino
   window.open(`https://wa.me/${numero}?text=${mensaje}`, '_blank')
 
   show('¡Mensaje enviado por WhatsApp!', 'success')
@@ -41,10 +41,10 @@ async function submit() {
         <div class="space-y-6">
           <div
             v-for="item in [
-              { icon: 'fa-map-marker-alt', title: 'Dirección', text: 'Belgrano 855 | Monseñor Enrique Angelelli 2860, Comodoro Rivadavia' },
-              { icon: 'fa-phone',          title: 'Teléfono',  text: '+54 9 297 538-1382' },
-              { icon: 'fa-envelope',       title: 'Email',     text: 'Elvissscabj1223@gmail.com' },
-              { icon: 'fa-clock',          title: 'Horario',   text:  'Lun–Vie 9hs – 21hs -- Sáb 10hs – 21hs , Domingos online (solo entregas)'  },
+              { icon: 'fa-map-marker-alt', title: 'Dirección', text: 'Elio Medrano 2210, Comodoro Rivadavia' },
+              { icon: 'fa-phone',          title: 'Teléfono',  text: '+54 9 2975011424' },
+            //{ icon: 'fa-envelope',       title: 'Email',     text: 'Elvissscabj1223@gmail.com' },
+              { icon: 'fa-clock',          title: 'Horario',   text: 'Retiros al domicilio de 8:00 am a 22:00 pm. Se toman pedidos todos los días hasta las 18:00 hrs. Los envíos se cobran según la distancia.'  },
             ]" :key="item.title"
             class="flex gap-4 items-start"
           >

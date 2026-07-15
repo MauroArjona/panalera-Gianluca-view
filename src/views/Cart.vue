@@ -6,8 +6,9 @@ import { getWhatsappOrderUrl } from '@/composables/useWhatsappOrder'
 
 const cart = useCartStore()
 
-const whatsappPhone = import.meta.env.VITE_WHATSAPP_PHONE
-const siteUrl = import.meta.env.VITE_SITE_URL ?? window.location.origin
+const whatsappPhone = import.meta.env.VITE_WHATSAPP_PHONE?.trim() ?? ''
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? window.location.origin).replace(/\/$/, '')
+const hasWhatsappPhone = computed(() => whatsappPhone.length > 0)
 
 const whatsappUrl = computed(() =>
   getWhatsappOrderUrl({
@@ -73,7 +74,7 @@ const whatsappUrl = computed(() =>
             <div class="flex justify-between text-gray-600">
               <span>Envío</span>
               <span :class="cart.shipping === 0 ? 'text-brand font-medium' : ''">
-                {{ cart.shipping === 0 ? 'GRATIS' : `$${cart.shipping.toFixed(2)}` }}
+                {{ cart.shipping === 0 ? 'COORDINAR' : `$${cart.shipping.toFixed(2)}` }}
               </span>
             </div>
             <div
@@ -91,6 +92,7 @@ const whatsappUrl = computed(() =>
           </div>
 
           <a
+            v-if="hasWhatsappPhone"
             :href="whatsappUrl"
             target="_blank"
             rel="noopener noreferrer"
@@ -98,6 +100,14 @@ const whatsappUrl = computed(() =>
           >
             Enviar pedido por WhatsApp <i class="fab fa-whatsapp ml-2" />
           </a>
+          <button
+            v-else
+            type="button"
+            disabled
+            class="w-full mt-6 py-3 text-base text-center block rounded bg-gray-300 text-gray-500 cursor-not-allowed"
+          >
+            Falta configurar WhatsApp <i class="fab fa-whatsapp ml-2" />
+          </button>
 
           <!-- Medios de pago -->
           <div class="flex justify-center gap-3 mt-4 text-gray-300">
