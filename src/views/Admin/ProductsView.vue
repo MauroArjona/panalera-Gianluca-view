@@ -84,7 +84,7 @@ async function openCreate() {
   try {
     await loadCatalog()
   } catch (e) {
-    toastError(e instanceof Error ? e.message : 'Error al actualizar categorias.')
+    toastError(e instanceof Error ? e.message : 'Error al actualizar categorías.')
   }
   form.resetForm()
   modalOpen.value = true
@@ -96,7 +96,7 @@ async function openEdit(product: Product) {
   try {
     await loadCatalog()
   } catch (e) {
-    toastError(e instanceof Error ? e.message : 'Error al actualizar categorias.')
+    toastError(e instanceof Error ? e.message : 'Error al actualizar categorías.')
   }
   form.populateForm(product)
   modalOpen.value = true

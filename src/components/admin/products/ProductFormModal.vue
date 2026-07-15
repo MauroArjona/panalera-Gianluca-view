@@ -82,7 +82,7 @@ function selectCategoria(value: string) {
 }
 
 const saveLabel = computed(() => {
-  if (props.isUploading) return 'Subiendo imagenes...'
+  if (props.isUploading) return 'Subiendo imágenes...'
   if (props.saving) return 'Guardando...'
   return props.isEditing ? 'Guardar' : 'Crear'
 })
@@ -119,7 +119,7 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
           <div class="px-6 py-5 space-y-5">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Imagenes <span class="text-red-500">*</span>
+                Imágenes <span class="text-red-500">*</span>
               </label>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div v-for="(slot, idx) in imageSlots" :key="idx" class="relative">
@@ -157,7 +157,7 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
                 <p v-if="formErrors.nombre" class="text-red-500 text-xs mt-1">{{ formErrors.nombre }}</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Categoria *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Categoría *</label>
                 <select
                   :value="selectedCategoriaId ?? ''"
                   class="input"
@@ -170,16 +170,16 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Subcategoria / marca *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Subcategoría / marca *</label>
                 <select
                   :value="fSubcategoriaId ?? ''"
                   class="input"
                   :disabled="!selectedCategoriaId"
                   @change="$emit('update:fSubcategoriaId', ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
                 >
-                  <option value="">{{ selectedCategoriaId ? 'Seleccionar marca o General' : 'Elegi una categoria' }}</option>
+                  <option value="">{{ selectedCategoriaId ? 'Seleccionar marca o General' : 'Elegí una categoría' }}</option>
                   <option v-for="sub in filteredSubcategorias" :key="sub.id" :value="sub.id">
-                    {{ sub.nombre === 'General' ? 'General (sin marca especifica)' : sub.nombre }}
+                    {{ sub.nombre === 'General' ? 'General (sin marca específica)' : sub.nombre }}
                   </option>
                 </select>
                 <p v-if="formErrors.subcategoria" class="text-red-500 text-xs mt-1">{{ formErrors.subcategoria }}</p>
@@ -243,7 +243,7 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
             <div class="grid sm:grid-cols-3 gap-4">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input :checked="fIsPromo" type="checkbox" class="accent-brand" @change="$emit('update:fIsPromo', ($event.target as HTMLInputElement).checked)" />
-                <span class="text-sm font-medium text-gray-700">Promocion</span>
+                <span class="text-sm font-medium text-gray-700">Promoción</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
                 <input :checked="fDestacado" :disabled="destacadoDisabled" type="checkbox" class="accent-brand" @change="$emit('update:fDestacado', ($event.target as HTMLInputElement).checked)" />

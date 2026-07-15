@@ -45,7 +45,7 @@ export function buildWhatsappOrderMessage({
       ].filter(Boolean).join('\n')
     }),
     '',
-    shipping > 0 ? `Envio: ${money(shipping)}` : '',
+    shipping > 0 ? `Envío: ${money(shipping)}` : '',
     `Total: ${money(total)}`,
   ]
 

@@ -35,7 +35,7 @@ export function useProductForm() {
     formErrors.value = {}
     if (!fNombre.value.trim()) formErrors.value.nombre = 'El nombre es obligatorio.'
     if (fPrecio.value <= 0) formErrors.value.precio = 'El precio debe ser mayor a 0.'
-    if (!fSubcategoriaId.value) formErrors.value.subcategoria = 'La subcategoria es obligatoria.'
+    if (!fSubcategoriaId.value) formErrors.value.subcategoria = 'La subcategoría es obligatoria.'
     if (!imageSlots.value.some((slot) => slot.url || slot.preview)) formErrors.value.imagen = 'Agrega al menos una imagen.'
     if (fTalles.value.some((item) => item.stock < 0)) formErrors.value.talles = 'El stock no puede ser negativo.'
     return Object.keys(formErrors.value).length === 0

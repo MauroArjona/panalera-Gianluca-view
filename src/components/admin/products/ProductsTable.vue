@@ -91,7 +91,7 @@ function sortIcon(field: string) {
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">
-          <i class="fa fa-box-open text-brand mr-2"></i>Gestion de Productos
+          <i class="fa fa-box-open text-brand mr-2"></i>Gestión de Productos
         </h1>
         <p class="text-sm text-gray-500 mt-0.5">
           {{ total }} producto{{ total !== 1 ? 's' : '' }} en total
@@ -108,7 +108,7 @@ function sortIcon(field: string) {
         <input
           :value="search"
           type="text"
-          placeholder="Buscar por nombre, categoria, subcategoria o precio..."
+          placeholder="Buscar por nombre, categoría, subcategoría o precio..."
           class="input pl-9"
           @input="$emit('update:search', ($event.target as HTMLInputElement).value); resetPage()"
         />
@@ -119,7 +119,7 @@ function sortIcon(field: string) {
         class="input w-48"
         @change="$emit('update:categoriaFilter', ($event.target as HTMLSelectElement).value); resetPage()"
       >
-        <option value="">Todas las categorias</option>
+        <option value="">Todas las categorías</option>
         <option v-for="cat in categoriasUnicas" :key="cat" :value="cat">{{ cat }}</option>
       </select>
 
@@ -170,9 +170,9 @@ function sortIcon(field: string) {
               <th class="px-4 py-3 text-left cursor-pointer hover:text-brand" @click="$emit('sort', 'name')">
                 Nombre <i :class="['fa ml-1', sortIcon('name')]"></i>
               </th>
-              <th class="px-4 py-3 text-left">Subcategoria / talle</th>
+              <th class="px-4 py-3 text-left">Subcategoría / talle</th>
               <th class="px-4 py-3 text-left cursor-pointer hover:text-brand" @click="$emit('sort', 'category')">
-                Categoria <i :class="['fa ml-1', sortIcon('category')]"></i>
+                Categoría <i :class="['fa ml-1', sortIcon('category')]"></i>
               </th>
               <th class="px-4 py-3 text-right cursor-pointer hover:text-brand" @click="$emit('sort', 'price')">
                 Precio <i :class="['fa ml-1', sortIcon('price')]"></i>
@@ -209,7 +209,7 @@ function sortIcon(field: string) {
                 <p class="text-xs text-gray-400">ID {{ product.id }}</p>
               </td>
               <td class="px-4 py-3">
-                <p class="text-xs text-gray-700">{{ product.subcategory || 'Sin subcategoria' }}</p>
+                <p class="text-xs text-gray-700">{{ product.subcategory || 'Sin subcategoría' }}</p>
                 <p class="text-xs text-gray-400">{{ product.talle || 'Sin talle' }}</p>
               </td>
               <td class="px-4 py-3">{{ product.category }}</td>
@@ -269,7 +269,7 @@ function sortIcon(field: string) {
         v-if="totalPages > 1"
         class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500"
       >
-        <span>Pagina {{ currentPage }} de {{ totalPages }} ({{ filteredProducts.length }} resultados)</span>
+        <span>Página {{ currentPage }} de {{ totalPages }} ({{ filteredProducts.length }} resultados)</span>
         <div class="flex gap-1">
           <button
             class="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"

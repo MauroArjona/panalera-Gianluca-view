@@ -29,7 +29,7 @@ const filters = ref<ProductFilters>({
 })
 
 const sortOptions: Array<{ value: ProductFilters['sortBy']; label: string }> = [
-  { value: 'newest', label: 'Mas recientes' },
+  { value: 'newest', label: 'Más recientes' },
   { value: 'price_asc', label: 'Precio: menor a mayor' },
   { value: 'price_desc', label: 'Precio: mayor a menor' },
   { value: 'name_asc', label: 'Nombre: A-Z' },
@@ -133,7 +133,7 @@ const filterSections = computed(() => {
 })
 
 function displayCategoriaName(nombre: string) {
-  return normalizeLabel(nombre) === 'toallitas' ? 'Toallitas humedas' : nombre
+  return normalizeLabel(nombre) === 'toallitas' ? 'Toallitas húmedas' : nombre
 }
 
 const visibleSubcategorias = computed(() =>
@@ -294,7 +294,7 @@ watch(
 
         <div class="space-y-1">
           <div v-if="catalogLoading" class="text-sm text-gray-400 px-2 py-1.5">
-            Cargando categorias...
+            Cargando categorías...
           </div>
           <button
             :class="[

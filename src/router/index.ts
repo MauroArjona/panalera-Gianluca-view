@@ -82,7 +82,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  document.title = `${to.meta.title ?? 'Pagina'} | Panalera Gianluca`
+  document.title = `${to.meta.title ?? 'Página'} | Pañalera Gianluca`
   const auth = useAuthStore()
 
   if (to.meta.guestOnly && auth.isAuthenticated) {

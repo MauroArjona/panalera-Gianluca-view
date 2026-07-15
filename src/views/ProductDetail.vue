@@ -176,7 +176,7 @@ watch(productImages, (images) => {
         <p class="text-sm text-gray-400 mb-4">{{ product.category }}</p>
 
         <p v-if="product.subcategory" class="text-sm text-gray-500 mb-4">
-          <span class="font-medium text-gray-700">Subcategoria:</span> {{ product.subcategory }}
+          <span class="font-medium text-gray-700">Subcategoría:</span> {{ product.subcategory }}
         </p>
 
         <!-- Precio -->

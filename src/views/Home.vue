@@ -16,7 +16,7 @@ interface StaticCategoria {
 const STATIC_CATEGORIAS: StaticCategoria[] = [
   {
     nombre: 'Panales',
-    label: 'Panales',
+    label: 'Pañales',
     icon: 'fa-baby',
     tone: 'bg-sky-50 text-sky-600 border-sky-100',
     text: 'Marcas y talles para cada etapa.',
@@ -26,7 +26,7 @@ const STATIC_CATEGORIAS: StaticCategoria[] = [
     label: 'Higiene',
     icon: 'fa-hand-sparkles',
     tone: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    text: 'Toallitas, oleos y cuidado diario.',
+    text: 'Toallitas, óleos y cuidado diario.',
   },
   {
     nombre: 'Accesorios',
@@ -64,7 +64,7 @@ onMounted(async () => {
           <i class="fa fa-truck-fast" />
         </span>
         <div>
-          <p class="font-semibold text-gray-800 text-sm">Envios</p>
+          <p class="font-semibold text-gray-800 text-sm">Envíos</p>
           <p class="text-xs text-gray-500">Tomamos pedidos hasta las 18 hs</p>
         </div>
       </div>
@@ -92,7 +92,7 @@ onMounted(async () => {
         </span>
         <div>
           <p class="font-semibold text-gray-800 text-sm">Cuidado diario</p>
-          <p class="text-xs text-gray-500">Todo para bebes y familias</p>
+          <p class="text-xs text-gray-500">Todo para bebés y familias</p>
         </div>
       </div>
     </div>
@@ -101,11 +101,11 @@ onMounted(async () => {
   <section class="max-w-7xl mx-auto px-4 py-14">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
       <div>
-        <p class="text-sm font-semibold text-brand mb-1">Comprar por categoria</p>
-        <h2 class="text-3xl font-bold text-gray-900">Lo esencial para el bebe</h2>
+        <p class="text-sm font-semibold text-brand mb-1">Comprar por categoría</p>
+        <h2 class="text-3xl font-bold text-gray-900">Lo esencial para el bebé</h2>
       </div>
       <p class="text-gray-500 max-w-xl">
-        Encontra rapido pañales, higiene y accesorios por marca, talle o necesidad.
+        Encontrá rápido pañales, higiene y accesorios por marca, talle o necesidad.
       </p>
     </div>
 

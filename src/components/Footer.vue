@@ -14,7 +14,7 @@ const productLinks = [
         <!-- Marca -->
         <div>
           <h2 class="text-brand text-xl font-bold border-b border-gray-600 pb-3 mb-4">
-            Panalera Gianluca
+            Pañalera Gianluca
           </h2>
 
           <ul class="space-y-2 text-sm">
@@ -141,7 +141,7 @@ const productLinks = [
 
     <!-- Copyright -->
     <div class="bg-black py-3 text-center text-xs text-gray-500">
-      &copy; {{ new Date().getFullYear() }} Panalera Gianluca. Todos los derechos reservados.
+      &copy; {{ new Date().getFullYear() }} Pañalera Gianluca. Todos los derechos reservados.
     </div>
   </footer>
 </template>
