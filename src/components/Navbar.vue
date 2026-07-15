@@ -31,7 +31,7 @@ function closeAll() {
 
 <template>
   <nav class="bg-white shadow sticky top-0 z-50">
-    <div class="w-full px-2">
+    <div class="w-full px-1">
       <div class="flex items-center justify-between min-h-20 py-2">
 
         <!-- Logo -->
