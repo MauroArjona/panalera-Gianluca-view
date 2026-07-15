@@ -320,6 +320,7 @@ export async function uploadImage(file: File, onProgress?: (percent: number) => 
       if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100))
     })
 
+    
     xhr.onload = () => {
       const body = JSON.parse(xhr.responseText || '{}')
       if (xhr.status >= 200 && xhr.status < 300) resolve(body.url)
