@@ -1,5 +1,5 @@
 <template>
-  <RouterLink to="/" class="flex items-center gap-1">
+  <RouterLink to="/" class="flex items-center gap-0">
     <img
       src="/logo-bebe-panalera.png"
       alt="Pañalera Gianluca"
