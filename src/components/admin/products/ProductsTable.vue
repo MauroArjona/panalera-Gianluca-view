@@ -76,6 +76,43 @@ const paginated = computed(() => {
   return filteredProducts.value.slice(start, start + props.perPage)
 })
 
+type PaginationItem = {
+  key: string
+  label: string
+  page?: number
+}
+
+const paginationItems = computed<PaginationItem[]>(() => {
+  const total = totalPages.value
+  const current = props.currentPage
+  const pages = new Set<number>([1, total, current, current - 1, current + 1])
+
+  if (current <= 4) {
+    pages.add(2)
+    pages.add(3)
+    pages.add(4)
+  }
+
+  if (current >= total - 3) {
+    pages.add(total - 1)
+    pages.add(total - 2)
+    pages.add(total - 3)
+  }
+
+  const visiblePages = [...pages]
+    .filter((page) => page >= 1 && page <= total)
+    .sort((a, b) => a - b)
+
+  return visiblePages.flatMap((page, index) => {
+    const previous = visiblePages[index - 1]
+    const item: PaginationItem = { key: `page-${page}`, label: String(page), page }
+    if (previous && page - previous > 1) {
+      return [{ key: `gap-${previous}-${page}`, label: '...' }, item]
+    }
+    return [item]
+  })
+})
+
 function resetPage() {
   emit('update:currentPage', 1)
 }
@@ -267,25 +304,30 @@ function sortIcon(field: string) {
 
       <div
         v-if="totalPages > 1"
-        class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500"
+        class="flex flex-col gap-3 px-4 py-3 border-t border-gray-100 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between"
       >
-        <span>Página {{ currentPage }} de {{ totalPages }} ({{ filteredProducts.length }} resultados)</span>
-        <div class="flex gap-1">
+        <span class="shrink-0">Página {{ currentPage }} de {{ totalPages }} ({{ filteredProducts.length }} resultados)</span>
+        <div class="flex max-w-full items-center gap-1 overflow-x-auto pb-1 sm:justify-end sm:pb-0">
           <button
-            class="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            class="h-9 min-w-9 shrink-0 rounded border px-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
             :disabled="currentPage === 1"
             @click="$emit('update:currentPage', currentPage - 1)"
           >
             <i class="fa fa-chevron-left"></i>
           </button>
           <button
-            v-for="p in totalPages"
-            :key="p"
-            :class="['px-3 py-1 rounded border transition', p === currentPage ? 'bg-brand text-white border-brand' : 'hover:bg-gray-50']"
-            @click="$emit('update:currentPage', p)"
-          >{{ p }}</button>
+            v-for="item in paginationItems"
+            :key="item.key"
+            :disabled="!item.page"
+            :class="[
+              'h-9 min-w-9 shrink-0 rounded border px-3 transition',
+              item.page === currentPage ? 'bg-brand text-white border-brand' : 'hover:bg-gray-50',
+              !item.page ? 'cursor-default border-transparent text-gray-400 hover:bg-transparent' : '',
+            ]"
+            @click="item.page && $emit('update:currentPage', item.page)"
+          >{{ item.label }}</button>
           <button
-            class="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            class="h-9 min-w-9 shrink-0 rounded border px-3 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
             :disabled="currentPage === totalPages"
             @click="$emit('update:currentPage', currentPage + 1)"
           >
