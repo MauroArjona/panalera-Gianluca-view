@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { CartItem, Product, ColorDot } from '@/types'
+import type { CartItem, Product, ProductSize, ColorDot } from '@/types'
 
 export const useCartStore = defineStore('cart', () => {
   // ─── State ──────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ export const useCartStore = defineStore('cart', () => {
   )
 
   const subtotal = computed(() =>
-    items.value.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
+    items.value.reduce((sum, i) => sum + (i.unitPrice ?? i.product.price) * i.quantity, 0),
   )
 
   const shipping = computed(() => (subtotal.value > 500 ? 0 : 15))
@@ -26,18 +26,22 @@ export const useCartStore = defineStore('cart', () => {
     quantity = 1,
     selectedSize: string,
     selectedColor: ColorDot,
+    selectedVariant: ProductSize | null = null,
   ) {
+    const unitPrice = selectedVariant?.price ?? product.price
+    const variantKey = selectedVariant?.id ?? `${selectedVariant?.talle ?? selectedSize}-${selectedVariant?.units ?? ''}-${unitPrice}`
     const existing = items.value.find(
       (i) =>
         i.product.id === product.id &&
         i.selectedSize === selectedSize &&
+        ((i.selectedVariant?.id ?? `${i.selectedVariant?.talle ?? i.selectedSize}-${i.selectedVariant?.units ?? ''}-${i.unitPrice ?? i.product.price}`) === variantKey) &&
         i.selectedColor.hex === selectedColor.hex,
     )
 
     if (existing) {
       existing.quantity += quantity
     } else {
-      items.value.push({ product, quantity, selectedSize, selectedColor })
+      items.value.push({ product, quantity, selectedSize, selectedColor, selectedVariant, unitPrice })
     }
     persist()
   }

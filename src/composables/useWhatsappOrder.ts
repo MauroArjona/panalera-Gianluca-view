@@ -13,7 +13,8 @@ function money(value: number) {
 }
 
 function getPublicProductImage(item: CartItem) {
-  const image = item.product.image?.trim()
+  const image = item.selectedVariant?.image?.trim()
+    || item.product.image?.trim()
     || item.product.images?.find((url) => url.trim().length > 0)?.trim()
     || ''
 
@@ -33,19 +34,21 @@ export function buildWhatsappOrderMessage({
     ...items.map((item) => {
       const product = item.product
       const image = getPublicProductImage(item)
+      const unitPrice = item.unitPrice ?? product.price
       const details = [
         item.selectedSize ? `Talle: ${item.selectedSize}` : '',
+        item.selectedVariant?.units ? `Presentación: ${item.selectedVariant.units}` : '',
         item.selectedColor?.name ? `Color: ${item.selectedColor.name}` : '',
       ].filter(Boolean)
 
       return [
-        `(Cantidad: ${item.quantity}) ${product.name} - ${money(product.price)}`,
+        `(Cantidad: ${item.quantity}) ${product.name} - ${money(unitPrice)}`,
         details.length ? details.join(' - ') : '',
         image ? `Ver foto: ${image}` : `Ver producto: ${productUrl(item)}`,
       ].filter(Boolean).join('\n')
     }),
     '',
-    shipping > 0 ? `Env�o: ${money(shipping)}` : '',
+    shipping > 0 ? `Envío: ${money(shipping)}` : '',
     `Total: ${money(total)}`,
   ]
 

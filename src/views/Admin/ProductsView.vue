@@ -84,7 +84,7 @@ async function openCreate() {
   try {
     await loadCatalog()
   } catch (e) {
-    toastError(e instanceof Error ? e.message : 'Error al actualizar categorías.')
+    toastError(e instanceof Error ? e.message : 'Error al actualizar categorÃ­as.')
   }
   form.resetForm()
   modalOpen.value = true
@@ -96,7 +96,7 @@ async function openEdit(product: Product) {
   try {
     await loadCatalog()
   } catch (e) {
-    toastError(e instanceof Error ? e.message : 'Error al actualizar categorías.')
+    toastError(e instanceof Error ? e.message : 'Error al actualizar categorÃ­as.')
   }
   form.populateForm(product)
   modalOpen.value = true
@@ -147,8 +147,8 @@ async function toggleStock(product: Product) {
   try {
     const nextStock = product.stock > 0 ? 0 : 1
     const talles = product.talles.length
-      ? product.talles.map((item) => ({ talle: item.talle, stock: nextStock }))
-      : [{ talle: 'Unidad', stock: nextStock }]
+      ? product.talles.map((item) => ({ ...item, stock: nextStock }))
+      : [{ talle: 'Unidad', stock: nextStock, price: product.price, units: '', image: '' }]
     await productApi.update(product.id, { talles })
     await loadAll()
   } catch (e) {
@@ -220,6 +220,7 @@ async function toggleStock(product: Product) {
       @update:f-en-carrusel="form.fEnCarrusel.value = $event"
       @image-change="(event, idx) => form.onImageChange(event, idx)"
       @image-clear="form.clearImage($event)"
+      @variant-image-change="(event, idx) => form.onVariantImageChange(event, idx)"
       @add-talle="form.addTalle()"
       @remove-talle="form.removeTalle($event)"
       @save="saveProduct"

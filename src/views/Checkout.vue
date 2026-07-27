@@ -45,17 +45,17 @@ async function placeOrder() {
       items: cart.items.map((i) => ({
         productId: i.product.id,
         quantity: i.quantity,
-        price: i.product.price,
-        size: i.selectedSize,
+        price: i.unitPrice ?? i.product.price,
+        size: [i.selectedSize, i.selectedVariant?.units].filter(Boolean).join(' - '),
       })),
       total: cart.total,
       estado: 'pendiente',
     })
     cart.clear()
-    show('¡Pedido realizado con éxito!', 'success')
+    show('Â¡Pedido realizado con Ã©xito!', 'success')
     router.push('/orders')
   } catch {
-    show('No se pudo realizar el pedido. Intentá de nuevo.', 'error')
+    show('No se pudo realizar el pedido. IntentÃ¡ de nuevo.', 'error')
   } finally {
     submitting.value = false
   }
@@ -66,10 +66,10 @@ async function placeOrder() {
   <div class="max-w-5xl mx-auto px-4 py-10">
     <h1 class="text-2xl font-bold text-gray-800 mb-8">Finalizar compra</h1>
 
-    <!-- Carrito vacío -->
+    <!-- Carrito vacÃ­o -->
     <div v-if="cart.items.length === 0" class="text-center py-20">
       <i class="fa fa-cart-arrow-down text-6xl text-gray-300 mb-4" />
-      <p class="text-lg text-gray-500 mb-4">Tu carrito está vacío.</p>
+      <p class="text-lg text-gray-500 mb-4">Tu carrito estÃ¡ vacÃ­o.</p>
       <router-link to="/shop" class="btn-primary">Volver a la tienda</router-link>
     </div>
 
@@ -81,7 +81,7 @@ async function placeOrder() {
         <!-- Indicador de pasos -->
         <div class="flex gap-2 mb-4">
           <span
-            v-for="(label, i) in ['Envío', 'Revisar y pagar']"
+            v-for="(label, i) in ['EnvÃ­o', 'Revisar y pagar']"
             :key="i"
             :class="[
               'px-4 py-1.5 rounded-full text-sm font-medium transition',
@@ -92,9 +92,9 @@ async function placeOrder() {
           </span>
         </div>
 
-        <!-- Paso 1: Dirección de envío -->
+        <!-- Paso 1: DirecciÃ³n de envÃ­o -->
         <div v-if="step === 1" class="bg-white rounded-lg shadow-sm p-6">
-          <h2 class="text-lg font-bold text-gray-800 mb-5">Dirección de envío</h2>
+          <h2 class="text-lg font-bold text-gray-800 mb-5">DirecciÃ³n de envÃ­o</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
@@ -102,18 +102,18 @@ async function placeOrder() {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
-              <input v-model="address.lastName" class="input" placeholder="García" required />
+              <input v-model="address.lastName" class="input" placeholder="GarcÃ­a" required />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
               <input v-model="address.email" type="email" class="input" placeholder="juan@ejemplo.com" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">TelÃ©fono</label>
               <input v-model="address.phone" class="input" placeholder="11-1234-5678" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Calle y número *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Calle y nÃºmero *</label>
               <input v-model="address.address" class="input" placeholder="Av. Corrientes 1234" />
             </div>
             <div>
@@ -125,11 +125,11 @@ async function placeOrder() {
               <input v-model="address.state" class="input" placeholder="Buenos Aires" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Código postal *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">CÃ³digo postal *</label>
               <input v-model="address.zipCode" class="input" placeholder="1043" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">País *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">PaÃ­s *</label>
               <input v-model="address.country" class="input" placeholder="Argentina" />
             </div>
           </div>
@@ -145,16 +145,16 @@ async function placeOrder() {
           </div>
         </div>
 
-        <!-- Paso 2: Revisión -->
+        <!-- Paso 2: RevisiÃ³n -->
         <div v-if="step === 2" class="bg-white rounded-lg shadow-sm p-6">
           <div class="flex items-center justify-between mb-5">
-            <h2 class="text-lg font-bold text-gray-800">Revisá tu pedido</h2>
+            <h2 class="text-lg font-bold text-gray-800">RevisÃ¡ tu pedido</h2>
             <button class="text-sm text-brand hover:underline" @click="step = 1">
-              Editar dirección
+              Editar direcciÃ³n
             </button>
           </div>
 
-          <!-- Resumen de dirección -->
+          <!-- Resumen de direcciÃ³n -->
           <div class="bg-gray-50 rounded p-4 text-sm text-gray-600 mb-5">
             <p class="font-medium text-gray-800 mb-1">{{ address.firstName }} {{ address.lastName }}</p>
             <p>{{ address.address }}, {{ address.city }} {{ address.zipCode }}</p>
@@ -172,18 +172,18 @@ async function placeOrder() {
               <img :src="getProductImage(item.product)" :alt="item.product.name" class="w-14 h-14 rounded object-cover" />
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-800">{{ item.product.name }}</p>
-                <p class="text-xs text-gray-400">{{ item.selectedSize }} · {{ item.selectedColor.name }} · Cantidad {{ item.quantity }}</p>
+                <p class="text-xs text-gray-400">{{ item.selectedSize }} Â· {{ item.selectedColor.name }} Â· Cantidad {{ item.quantity }}</p>
               </div>
-              <p class="font-semibold text-gray-800 text-sm">${{ (item.product.price * item.quantity).toFixed(2) }}</p>
+              <p class="font-semibold text-gray-800 text-sm">${{ ((item.unitPrice ?? item.product.price) * item.quantity).toFixed(2) }}</p>
             </div>
           </div>
 
-          <!-- Método de pago (mock) -->
+          <!-- MÃ©todo de pago (mock) -->
           <div class="mt-5 pt-4 border-t">
-            <h3 class="font-semibold text-gray-700 mb-3">Método de pago</h3>
+            <h3 class="font-semibold text-gray-700 mb-3">MÃ©todo de pago</h3>
             <div class="flex gap-3 flex-wrap">
               <label
-                v-for="pm in ['Tarjeta de crédito', 'PayPal', 'Cripto']"
+                v-for="pm in ['Tarjeta de crÃ©dito', 'PayPal', 'Cripto']"
                 :key="pm"
                 class="flex items-center gap-2 cursor-pointer border border-gray-200 rounded px-3 py-2 text-sm hover:border-brand transition"
               >
@@ -205,7 +205,7 @@ async function placeOrder() {
               <span>${{ cart.subtotal.toFixed(2) }}</span>
             </div>
             <div class="flex justify-between">
-              <span>Envío</span>
+              <span>EnvÃ­o</span>
               <span :class="cart.shipping === 0 ? 'text-brand' : ''">
                 {{ cart.shipping === 0 ? 'GRATIS' : `$${cart.shipping.toFixed(2)}` }}
               </span>

@@ -6,7 +6,7 @@ import { useToast } from '@/composables/useToast'
 import { productApi } from '@/api/client'
 import { getProductImage, normalizeProductImageUrl } from '@/utils/productImage'
 import ProductCard from '@/components/ProductCard.vue'
-import type { Product } from '@/api/client'
+import type { Product, ProductSize } from '@/api/client'
 import type { ColorDot } from '@/types'
 
 const route = useRoute()
@@ -19,20 +19,38 @@ const loading      = ref(true)
 const error        = ref(false)
 
 const selectedSize  = ref('')
+const selectedVariant = ref<ProductSize | null>(null)
 const selectedColor = ref<ColorDot>({ name: '', hex: '#000000' })
 const quantity      = ref(1)
 const addedToCart   = ref(false)
 const selectedImage = ref('')
 
-// El backend devuelve 'talle' como string simple (ej. "39" o "39,40,41")
-// Parseamos a array para la UI
 const sizesArray = computed<string[]>(() => {
-  if (!product.value?.talle) return []
-  return product.value.talle
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s && s.toLowerCase() !== 'unidad')
+  const sizes = (product.value?.talles ?? [])
+    .map((item) => item.talle?.trim())
+    .filter((size): size is string => Boolean(size) && size.toLowerCase() !== 'unidad')
+
+  return Array.from(new Set(sizes))
 })
+
+const variantsForSelectedSize = computed(() => {
+  if (!product.value) return []
+  if (!selectedSize.value) return product.value.talles
+  return product.value.talles.filter((item) => item.talle === selectedSize.value)
+})
+
+const currentPrice = computed(() => selectedVariant.value?.price ?? product.value?.price ?? 0)
+const currentStock = computed(() => selectedVariant.value?.stock ?? product.value?.stock ?? 0)
+const currentImage = computed(() =>
+  selectedVariant.value?.image ? normalizeProductImageUrl(selectedVariant.value.image) : '',
+)
+
+function selectVariant(variant: ProductSize) {
+  selectedVariant.value = variant
+  selectedSize.value = variant.talle
+  quantity.value = Math.min(quantity.value, Math.max(1, variant.stock))
+  if (variant.image) selectedImage.value = normalizeProductImageUrl(variant.image)
+}
 
 async function loadProduct(id: string) {
   loading.value = true
@@ -50,8 +68,9 @@ async function loadProduct(id: string) {
   try {
     product.value = await productApi.getById(numId)
 
-    // Pre-seleccionar primer talle disponible
-    selectedSize.value = sizesArray.value[0] ?? ''
+    selectedVariant.value = product.value.talles[0] ?? null
+    selectedSize.value = selectedVariant.value?.talle ?? sizesArray.value[0] ?? ''
+    if (selectedVariant.value?.image) selectedImage.value = normalizeProductImageUrl(selectedVariant.value.image)
 
     // El backend no tiene colores por producto — inicializar vacío
     selectedColor.value = { name: '', hex: '#000000' }
@@ -78,17 +97,21 @@ watch(
 
 function addToCart() {
   if (!product.value) return
-  cart.add(product.value, quantity.value, selectedSize.value, selectedColor.value)
+  cart.add(product.value, quantity.value, selectedSize.value, selectedColor.value, selectedVariant.value)
   addedToCart.value = true
   show(`"${product.value.name}" agregado al carrito!`, 'success')
   setTimeout(() => (addedToCart.value = false), 2000)
 }
 
 // Stock: el backend devuelve `stock` numérico
-const inStock = computed(() => (product.value?.stock ?? 0) > 0)
+const inStock = computed(() => currentStock.value > 0)
 const productImages = computed(() => {
   if (!product.value) return []
-  const images = [product.value.image, ...(product.value.images ?? [])]
+  const images = [
+    product.value.image,
+    ...(product.value.images ?? []),
+    ...(product.value.talles ?? []).map((variant) => variant.image),
+  ]
     .map((url) => url?.trim())
     .filter((url): url is string => Boolean(url))
     .map(normalizeProductImageUrl)
@@ -98,7 +121,14 @@ const productImages = computed(() => {
 const productImage = computed(() => selectedImage.value || getProductImage(product.value))
 
 watch(productImages, (images) => {
-  selectedImage.value = images[0] ?? ''
+  selectedImage.value = currentImage.value || (images[0] ?? '')
+})
+
+watch(selectedSize, () => {
+  const options = variantsForSelectedSize.value
+  if (options[0] && !options.some((variant) => variant === selectedVariant.value)) {
+    selectVariant(options[0])
+  }
 })
 </script>
 
@@ -181,7 +211,7 @@ watch(productImages, (images) => {
 
         <!-- Precio -->
         <div class="flex items-baseline gap-3 mb-5">
-          <span class="text-3xl font-bold text-gray-900">${{ product.price.toFixed(2) }}</span>
+          <span class="text-3xl font-bold text-gray-900">${{ currentPrice.toFixed(2) }}</span>
           <span v-if="product.oldPrice" class="text-lg text-gray-400 line-through">
             ${{ product.oldPrice.toFixed(2) }}
           </span>
@@ -189,7 +219,7 @@ watch(productImages, (images) => {
             v-if="product.oldPrice"
             class="text-sm font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded"
           >
-            Ahorrás {{ Math.round((1 - product.price / product.oldPrice) * 100) }}%
+            Ahorrás {{ Math.round((1 - currentPrice / product.oldPrice) * 100) }}%
           </span>
         </div>
 
@@ -202,7 +232,7 @@ watch(productImages, (images) => {
             ]"
           >
             <i :class="['fa text-xs', inStock ? 'fa-circle-check' : 'fa-circle-xmark']" />
-            {{ inStock ? `En stock (${product.stock})` : 'Sin stock' }}
+            {{ inStock ? `En stock (${currentStock})` : 'Sin stock' }}
           </span>
         </div>
 
@@ -228,6 +258,34 @@ watch(productImages, (images) => {
           </div>
         </div>
 
+        <div v-if="variantsForSelectedSize.length > 0" class="mb-5">
+          <p class="text-sm font-semibold text-gray-700 mb-2">
+            Presentación
+          </p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <button
+              v-for="variant in variantsForSelectedSize"
+              :key="variant.id ?? `${variant.talle}-${variant.units}-${variant.price}`"
+              type="button"
+              :class="[
+                'rounded-lg border p-3 text-left transition',
+                selectedVariant === variant
+                  ? 'border-brand bg-sky-50 ring-1 ring-brand'
+                  : 'border-gray-200 hover:border-brand/60',
+              ]"
+              @click="selectVariant(variant)"
+            >
+              <span class="block text-sm font-bold text-gray-900">
+                {{ variant.talle }}<span v-if="variant.units"> - {{ variant.units }}</span>
+              </span>
+              <span class="block text-sm text-brand font-semibold">${{ variant.price.toFixed(2) }}</span>
+              <span class="block text-xs text-gray-400">
+                {{ variant.stock > 0 ? `${variant.stock} disponibles` : 'Sin stock' }}
+              </span>
+            </button>
+          </div>
+        </div>
+
         <!-- Cantidad + Agregar al carrito -->
         <div class="flex items-center gap-4">
           <div class="flex items-center border border-gray-300 rounded overflow-hidden">
@@ -240,7 +298,7 @@ watch(productImages, (images) => {
             <span class="w-12 text-center font-semibold text-gray-800">{{ quantity }}</span>
             <button
               class="w-10 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
-              @click="quantity = Math.min(product.stock, quantity + 1)"
+              @click="quantity = Math.min(currentStock, quantity + 1)"
             >
               <i class="fa fa-plus text-xs" />
             </button>

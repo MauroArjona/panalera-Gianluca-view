@@ -32,11 +32,13 @@ export interface ColorDot {
 }
 
 // ─── CartItem ─────────────────────────────────────────────────────────────────
-import type { Product } from '@/api/client'
+import type { Product, ProductSize } from '@/api/client'
 
 export interface CartItem {
   product: Product
   quantity: number
   selectedSize: string
   selectedColor: ColorDot
+  selectedVariant?: ProductSize | null
+  unitPrice?: number
 }

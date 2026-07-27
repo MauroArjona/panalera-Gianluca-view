@@ -22,22 +22,26 @@ export function useProductForm() {
   const fPrecio = ref<number>(0)
   const fPrecioAnterior = ref<number | undefined>(undefined)
   const fSubcategoriaId = ref<number | null>(null)
-  const fTalles = ref<ProductSize[]>([{ talle: '', stock: 0 }])
+  const fTalles = ref<ProductSize[]>([{ talle: '', stock: 0, price: 0, units: '', image: '' }])
   const fIsPromo = ref(false)
   const fDestacado = ref(false)
   const fEnCarrusel = ref(false)
   const imageSlots = ref<ExtraImage[]>([makeEmptySlot()])
+  const variantImageUploads = ref<Set<number>>(new Set())
   const formErrors = ref<Record<string, string>>({})
 
-  const isUploading = computed(() => imageSlots.value.some((slot) => slot.uploading))
+  const isUploading = computed(() =>
+    imageSlots.value.some((slot) => slot.uploading) || variantImageUploads.value.size > 0,
+  )
 
   function validate(): boolean {
     formErrors.value = {}
     if (!fNombre.value.trim()) formErrors.value.nombre = 'El nombre es obligatorio.'
     if (fPrecio.value <= 0) formErrors.value.precio = 'El precio debe ser mayor a 0.'
-    if (!fSubcategoriaId.value) formErrors.value.subcategoria = 'La subcategoría es obligatoria.'
+    if (!fSubcategoriaId.value) formErrors.value.subcategoria = 'La subcategorÃ­a es obligatoria.'
     if (!imageSlots.value.some((slot) => slot.url || slot.preview)) formErrors.value.imagen = 'Agrega al menos una imagen.'
     if (fTalles.value.some((item) => item.stock < 0)) formErrors.value.talles = 'El stock no puede ser negativo.'
+    if (fTalles.value.some((item) => item.price < 0)) formErrors.value.talles = 'El precio de la variante no puede ser negativo.'
     return Object.keys(formErrors.value).length === 0
   }
 
@@ -51,6 +55,9 @@ export function useProductForm() {
         .map((item) => ({
           talle: item.talle.trim() || 'Unidad',
           stock: Number(item.stock ?? 0),
+          price: Number(item.price || fPrecio.value),
+          units: item.units?.trim() ?? '',
+          image: item.image?.trim() ?? '',
         }))
         .filter((item) => item.talle || item.stock > 0),
       is_promo: fIsPromo.value,
@@ -65,7 +72,7 @@ export function useProductForm() {
     fPrecio.value = 0
     fPrecioAnterior.value = undefined
     fSubcategoriaId.value = null
-    fTalles.value = [{ talle: '', stock: 0 }]
+    fTalles.value = [{ talle: '', stock: 0, price: 0, units: '', image: '' }]
     fIsPromo.value = false
     fDestacado.value = false
     fEnCarrusel.value = false
@@ -78,7 +85,15 @@ export function useProductForm() {
     fPrecio.value = product.price
     fPrecioAnterior.value = product.oldPrice ?? undefined
     fSubcategoriaId.value = product.subcategoriaId
-    fTalles.value = product.talles.length ? product.talles.map((item) => ({ talle: item.talle, stock: item.stock })) : [{ talle: '', stock: 0 }]
+    fTalles.value = product.talles.length
+      ? product.talles.map((item) => ({
+        talle: item.talle,
+        stock: item.stock,
+        price: item.price ?? product.price,
+        units: item.units ?? '',
+        image: item.image ?? '',
+      }))
+      : [{ talle: '', stock: 0, price: product.price, units: '', image: '' }]
     fIsPromo.value = product.isPromo
     fDestacado.value = product.destacado
     fEnCarrusel.value = product.enCarrusel
@@ -120,13 +135,31 @@ export function useProductForm() {
     }
   }
 
+  async function onVariantImageChange(e: Event, idx: number) {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+
+    variantImageUploads.value = new Set([...variantImageUploads.value, idx])
+    try {
+      const url = await uploadImage(file)
+      fTalles.value = fTalles.value.map((item, itemIdx) =>
+        itemIdx === idx ? { ...item, image: url } : item,
+      )
+    } finally {
+      const next = new Set(variantImageUploads.value)
+      next.delete(idx)
+      variantImageUploads.value = next
+      ;(e.target as HTMLInputElement).value = ''
+    }
+  }
+
   function addTalle() {
-    fTalles.value.push({ talle: '', stock: 0 })
+    fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value, units: '', image: '' })
   }
 
   function removeTalle(idx: number) {
     fTalles.value.splice(idx, 1)
-    if (fTalles.value.length === 0) fTalles.value.push({ talle: '', stock: 0 })
+    if (fTalles.value.length === 0) fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value, units: '', image: '' })
   }
 
   return {
@@ -149,6 +182,7 @@ export function useProductForm() {
     onImageChange,
     clearImage,
     uploadImages,
+    onVariantImageChange,
     addTalle,
     removeTalle,
   }

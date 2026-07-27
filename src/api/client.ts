@@ -20,6 +20,9 @@ export interface ProductSize {
   id?: number
   talle: string
   stock: number
+  price: number
+  units: string
+  image: string
 }
 
 export interface Product {

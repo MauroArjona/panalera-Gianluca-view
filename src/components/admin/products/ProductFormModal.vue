@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { normalizeProductImageUrl } from '@/utils/productImage'
 import type { Categoria, Subcategoria, ProductSize } from '@/api/client'
 import type { ExtraImage } from '@/composables/useProductForm'
 
@@ -36,6 +37,7 @@ const emit = defineEmits<{
   'update:fEnCarrusel': [v: boolean]
   'imageChange': [e: Event, idx: number]
   'imageClear': [idx: number]
+  'variantImageChange': [e: Event, idx: number]
   'addTalle': []
   'removeTalle': [idx: number]
   'save': []
@@ -214,27 +216,63 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
 
             <div>
               <div class="flex items-center justify-between mb-2">
-                <label class="block text-sm font-medium text-gray-700">Talles / presentaciones y stock</label>
+                <label class="block text-sm font-medium text-gray-700">Variantes por talle: unidades, precio, stock e imagen</label>
                 <button type="button" class="btn-ghost text-sm" @click="$emit('addTalle')">Agregar</button>
               </div>
               <div class="space-y-2">
-                <div v-for="(item, idx) in fTalles" :key="idx" class="grid grid-cols-[1fr_120px_40px] gap-2">
+                <div v-for="(item, idx) in fTalles" :key="idx" class="grid grid-cols-1 gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[1fr_1fr_120px_100px_40px]">
                   <input
                     :value="item.talle"
                     class="input"
-                    placeholder="Opcional. Ej: RN, M, 40u"
+                    placeholder="Talle. Ej: RN, M, XG"
                     @input="$emit('update:fTalles', updateTalle(idx, 'talle', ($event.target as HTMLInputElement).value))"
+                  />
+                  <input
+                    :value="item.units"
+                    class="input"
+                    placeholder="Unidades. Ej: 48u"
+                    @input="$emit('update:fTalles', updateTalle(idx, 'units', ($event.target as HTMLInputElement).value))"
+                  />
+                  <input
+                    :value="item.price || fPrecio"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="input"
+                    placeholder="Precio"
+                    @input="$emit('update:fTalles', updateTalle(idx, 'price', Number(($event.target as HTMLInputElement).value)))"
                   />
                   <input
                     :value="item.stock"
                     type="number"
                     min="0"
                     class="input"
+                    placeholder="Stock"
                     @input="$emit('update:fTalles', updateTalle(idx, 'stock', Number(($event.target as HTMLInputElement).value)))"
                   />
                   <button type="button" class="btn-ghost" @click="$emit('removeTalle', idx)">
                     <i class="fa fa-trash"></i>
                   </button>
+                  <div class="sm:col-span-5 flex flex-col gap-2 rounded-lg border border-gray-100 bg-white p-2">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div v-if="item.image" class="h-14 w-14 overflow-hidden rounded border border-gray-200 bg-gray-50 shrink-0">
+                        <img :src="normalizeProductImageUrl(item.image)" alt="" class="h-full w-full object-cover" />
+                      </div>
+                      <input
+                        :value="item.image"
+                        class="input flex-1"
+                        placeholder="Imagen de esta variante (URL opcional)"
+                        @input="$emit('update:fTalles', updateTalle(idx, 'image', ($event.target as HTMLInputElement).value))"
+                      />
+                      <label class="btn-ghost text-sm text-center cursor-pointer whitespace-nowrap">
+                        Subir imagen
+                        <input type="file" accept="image/*" class="hidden" @change="$emit('variantImageChange', $event, idx)" />
+                      </label>
+                    </div>
+                    <p class="text-[11px] text-gray-400">
+                      Ejemplo: podés cargar XXG 48u con una imagen y otra fila XXG 50u con otra imagen.
+                    </p>
+                  </div>
                 </div>
               </div>
               <p v-if="formErrors.talles" class="text-red-500 text-xs mt-1">{{ formErrors.talles }}</p>

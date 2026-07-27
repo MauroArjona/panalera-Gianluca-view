@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getProductImage } from '@/utils/productImage'
+import { getProductImage, normalizeProductImageUrl } from '@/utils/productImage'
 import type { CartItem } from '@/types'
 
 const props = defineProps<{
@@ -13,7 +13,13 @@ const emit = defineEmits<{
   updateQty: [index: number, qty: number]
 }>()
 
-const productImage = computed(() => getProductImage(props.item.product))
+const productImage = computed(() =>
+  props.item.selectedVariant?.image
+    ? normalizeProductImageUrl(props.item.selectedVariant.image)
+    : getProductImage(props.item.product),
+)
+
+const unitPrice = computed(() => props.item.unitPrice ?? props.item.product.price)
 </script>
 
 <template>
@@ -37,7 +43,8 @@ const productImage = computed(() => getProductImage(props.item.product))
       </router-link>
 
       <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
-        <span v-if="item.selectedSize">Size: {{ item.selectedSize }}</span>
+        <span v-if="item.selectedSize">Talle: {{ item.selectedSize }}</span>
+        <span v-if="item.selectedVariant?.units">Â· {{ item.selectedVariant.units }}</span>
         <span v-if="item.selectedSize && item.selectedColor?.hex">·</span>
         <span v-if="item.selectedColor?.hex" class="flex items-center gap-1">
           Color:
@@ -69,7 +76,7 @@ const productImage = computed(() => getProductImage(props.item.product))
 
         <div class="flex items-center gap-3">
           <span class="font-bold text-gray-900 text-sm">
-            ${{ (item.product.price * item.quantity).toFixed(2) }}
+            ${{ (unitPrice * item.quantity).toFixed(2) }}
           </span>
           <button
             class="text-red-400 hover:text-red-600 transition p-1"

@@ -13,21 +13,33 @@ const { show } = useToast()
 // Stock: el backend devuelve `stock` numérico
 const inStock = computed(() => props.product.stock > 0)
 const productImage = computed(() => getProductImage(props.product))
+const firstAvailableVariant = computed(() =>
+  props.product.talles.find((item) => item.stock > 0) ?? props.product.talles[0] ?? null,
+)
+const displayPrice = computed(() => {
+  const prices = props.product.talles.map((item) => item.price).filter((price) => price > 0)
+  return prices.length ? Math.min(...prices) : props.product.price
+})
 
-// El backend devuelve 'talle' como string simple o null
-// Parseamos a array para mostrar en la card
 const sizesArray = computed<string[]>(() => {
-  if (!props.product.talle) return []
+  const sizes = props.product.talles
+    .map((item) => item.talle?.trim())
+    .filter((size): size is string => Boolean(size) && size.toLowerCase() !== 'unidad')
+
+  if (sizes.length > 0) return Array.from(new Set(sizes))
+
   return props.product.talle
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s && s.toLowerCase() !== 'unidad')
+    ? Array.from(new Set(props.product.talle
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s && s.toLowerCase() !== 'unidad')))
+    : []
 })
 
 function quickAddToCart() {
   if (!inStock.value) return
   const color: ColorDot = { name: '', hex: '#000000' }
-  cart.add(props.product, 1, sizesArray.value[0] ?? '', color)
+  cart.add(props.product, 1, firstAvailableVariant.value?.talle ?? sizesArray.value[0] ?? '', color, firstAvailableVariant.value)
   show(`"${props.product.name}" agregado al carrito`, 'success')
 }
 </script>
@@ -79,7 +91,7 @@ function quickAddToCart() {
         v-if="product.oldPrice"
         class="absolute top-2 left-2 bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded"
       >
-        -{{ Math.round((1 - product.price / product.oldPrice) * 100) }}%
+        -{{ Math.round((1 - displayPrice / product.oldPrice) * 100) }}%
       </div>
 
       <!-- Badge promo -->
@@ -127,7 +139,7 @@ function quickAddToCart() {
       <div class="flex items-center justify-between mt-2">
         <div class="flex items-center gap-2">
           <span class="font-bold text-lg text-gray-900">
-            ${{ product.price.toFixed(2) }}
+            ${{ displayPrice.toFixed(2) }}
           </span>
           <span
             v-if="product.oldPrice"
