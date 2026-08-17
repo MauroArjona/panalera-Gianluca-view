@@ -278,7 +278,7 @@ watch(selectedSize, () => {
               <span class="block text-sm font-bold text-gray-900">
                 {{ variant.talle }}<span v-if="variant.units"> - {{ variant.units }}</span>
               </span>
-              <span class="block text-sm text-brand font-semibold">${{ variant.price.toFixed(2) }}</span>
+              <span class="block text-sm text-brand font-semibold">${{ (variant.price ?? product.price).toFixed(2) }}</span>
               <span class="block text-xs text-gray-400">
                 {{ variant.stock > 0 ? `${variant.stock} disponibles` : 'Sin stock' }}
               </span>

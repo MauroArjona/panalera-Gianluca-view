@@ -17,7 +17,9 @@ const firstAvailableVariant = computed(() =>
   props.product.talles.find((item) => item.stock > 0) ?? props.product.talles[0] ?? null,
 )
 const displayPrice = computed(() => {
-  const prices = props.product.talles.map((item) => item.price).filter((price) => price > 0)
+  const prices = props.product.talles
+    .map((item) => item.price ?? 0)
+    .filter((price) => price > 0)
   return prices.length ? Math.min(...prices) : props.product.price
 })
 

@@ -19,10 +19,10 @@ export function useProductForm() {
   const MAX_IMAGES = 6
 
   const fNombre = ref('')
-  const fPrecio = ref<number>(0)
+  const fPrecio = ref<number | undefined>(undefined)
   const fPrecioAnterior = ref<number | undefined>(undefined)
   const fSubcategoriaId = ref<number | null>(null)
-  const fTalles = ref<ProductSize[]>([{ talle: '', stock: 0, price: 0, units: '', image: '' }])
+  const fTalles = ref<ProductSize[]>([{ talle: '', stock: 0, price: null, units: '', image: '' }])
   const fIsPromo = ref(false)
   const fDestacado = ref(false)
   const fEnCarrusel = ref(false)
@@ -37,25 +37,28 @@ export function useProductForm() {
   function validate(): boolean {
     formErrors.value = {}
     if (!fNombre.value.trim()) formErrors.value.nombre = 'El nombre es obligatorio.'
-    if (fPrecio.value <= 0) formErrors.value.precio = 'El precio debe ser mayor a 0.'
+    if (fPrecio.value !== undefined && fPrecio.value <= 0) formErrors.value.precio = 'El precio debe ser mayor a 0.'
     if (!fSubcategoriaId.value) formErrors.value.subcategoria = 'La subcategoría es obligatoria.'
     if (!imageSlots.value.some((slot) => slot.url || slot.preview)) formErrors.value.imagen = 'Agrega al menos una imagen.'
     if (fTalles.value.some((item) => item.stock < 0)) formErrors.value.talles = 'El stock no puede ser negativo.'
-    if (fTalles.value.some((item) => item.price < 0)) formErrors.value.talles = 'El precio de la variante no puede ser negativo.'
+    if (fTalles.value.some((item) => item.price !== null && item.price < 0)) formErrors.value.talles = 'El precio de la variante no puede ser negativo.'
+    if (!fPrecio.value && !fTalles.value.some((item) => (item.price ?? 0) > 0)) {
+      formErrors.value.precio = 'Agregá un precio general o al menos un precio en una variante.'
+    }
     return Object.keys(formErrors.value).length === 0
   }
 
   function buildPayload(): ProductPayload {
     return {
       name: fNombre.value.trim(),
-      price: fPrecio.value,
+      price: fPrecio.value ?? null,
       subcategoria_id: fSubcategoriaId.value,
       images: imageSlots.value.map((slot) => slot.url).filter(Boolean),
       talles: fTalles.value
         .map((item) => ({
           talle: item.talle.trim() || 'Unidad',
           stock: Number(item.stock ?? 0),
-          price: Number(item.price || fPrecio.value),
+          price: item.price ?? null,
           units: item.units?.trim() ?? '',
           image: item.image?.trim() ?? '',
         }))
@@ -69,10 +72,10 @@ export function useProductForm() {
 
   function resetForm() {
     fNombre.value = ''
-    fPrecio.value = 0
+    fPrecio.value = undefined
     fPrecioAnterior.value = undefined
     fSubcategoriaId.value = null
-    fTalles.value = [{ talle: '', stock: 0, price: 0, units: '', image: '' }]
+    fTalles.value = [{ talle: '', stock: 0, price: null, units: '', image: '' }]
     fIsPromo.value = false
     fDestacado.value = false
     fEnCarrusel.value = false
@@ -82,7 +85,7 @@ export function useProductForm() {
 
   function populateForm(product: Product) {
     fNombre.value = product.name
-    fPrecio.value = product.price
+    fPrecio.value = product.price || undefined
     fPrecioAnterior.value = product.oldPrice ?? undefined
     fSubcategoriaId.value = product.subcategoriaId
     fTalles.value = product.talles.length
@@ -93,7 +96,7 @@ export function useProductForm() {
         units: item.units ?? '',
         image: item.image ?? '',
       }))
-      : [{ talle: '', stock: 0, price: product.price, units: '', image: '' }]
+      : [{ talle: '', stock: 0, price: product.price || null, units: '', image: '' }]
     fIsPromo.value = product.isPromo
     fDestacado.value = product.destacado
     fEnCarrusel.value = product.enCarrusel
@@ -154,12 +157,12 @@ export function useProductForm() {
   }
 
   function addTalle() {
-    fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value, units: '', image: '' })
+    fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value ?? null, units: '', image: '' })
   }
 
   function removeTalle(idx: number) {
     fTalles.value.splice(idx, 1)
-    if (fTalles.value.length === 0) fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value, units: '', image: '' })
+    if (fTalles.value.length === 0) fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value ?? null, units: '', image: '' })
   }
 
   return {

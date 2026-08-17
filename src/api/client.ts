@@ -20,7 +20,7 @@ export interface ProductSize {
   id?: number
   talle: string
   stock: number
-  price: number
+  price: number | null
   units: string
   image: string
 }
@@ -61,7 +61,7 @@ export interface ProductFilters {
 
 export interface ProductPayload {
   name: string
-  price: number
+  price?: number | null
   subcategoria_id?: number | null
   images: string[]
   talles: ProductSize[]

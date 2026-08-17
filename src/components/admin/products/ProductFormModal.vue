@@ -12,7 +12,7 @@ const props = defineProps<{
   imageSlots: ExtraImage[]
   maxImages: number
   fNombre: string
-  fPrecio: number
+  fPrecio: number | undefined
   fPrecioAnterior: number | undefined
   fSubcategoriaId: number | null
   fTalles: ProductSize[]
@@ -28,7 +28,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:fNombre': [v: string]
-  'update:fPrecio': [v: number]
+  'update:fPrecio': [v: number | undefined]
   'update:fPrecioAnterior': [v: number | undefined]
   'update:fSubcategoriaId': [v: number | null]
   'update:fTalles': [v: ProductSize[]]
@@ -45,6 +45,7 @@ const emit = defineEmits<{
 }>()
 
 const selectedCategoriaId = ref<number | null>(null)
+const draggedVariantIndex = ref<number | null>(null)
 
 const filteredSubcategorias = computed(() =>
   props.subcategorias
@@ -92,11 +93,30 @@ const saveLabel = computed(() => {
 const destacadoDisabled = computed(() => !props.fDestacado && props.destacadosCount >= 10)
 const carruselDisabled = computed(() => !props.fEnCarrusel && props.carruselCount >= 10)
 
-function updateTalle(idx: number, field: keyof ProductSize, value: string | number) {
+function updateTalle(idx: number, field: keyof ProductSize, value: string | number | null) {
   const next = props.fTalles.map((item, itemIdx) =>
     itemIdx === idx ? { ...item, [field]: value } : item,
   )
   return next
+}
+
+function reorderVariant(from: number, to: number) {
+  if (from === to || from < 0 || to < 0) return
+  const next = [...props.fTalles]
+  const [moved] = next.splice(from, 1)
+  if (!moved) return
+  next.splice(to, 0, moved)
+  emit('update:fTalles', next)
+}
+
+function onVariantDragStart(idx: number) {
+  draggedVariantIndex.value = idx
+}
+
+function onVariantDrop(idx: number) {
+  if (draggedVariantIndex.value === null) return
+  reorderVariant(draggedVariantIndex.value, idx)
+  draggedVariantIndex.value = null
 }
 </script>
 
@@ -190,14 +210,15 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
 
             <div class="grid sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Precio general opcional</label>
                 <input
                   :value="fPrecio"
                   type="number"
                   min="0"
                   step="0.01"
                   class="input"
-                  @input="$emit('update:fPrecio', Number(($event.target as HTMLInputElement).value))"
+                  placeholder="Vacío si cada variante tiene su precio"
+                  @input="$emit('update:fPrecio', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
                 />
                 <p v-if="formErrors.precio" class="text-red-500 text-xs mt-1">{{ formErrors.precio }}</p>
               </div>
@@ -220,7 +241,48 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
                 <button type="button" class="btn-ghost text-sm" @click="$emit('addTalle')">Agregar</button>
               </div>
               <div class="space-y-2">
-                <div v-for="(item, idx) in fTalles" :key="idx" class="grid grid-cols-1 gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[1fr_1fr_120px_100px_40px]">
+                <div
+                  v-for="(item, idx) in fTalles"
+                  :key="idx"
+                  draggable="true"
+                  :class="[
+                    'grid grid-cols-1 gap-2 rounded-lg border bg-gray-50 p-3 transition sm:grid-cols-[80px_1fr_1fr_120px_100px_40px]',
+                    draggedVariantIndex === idx ? 'border-brand opacity-70' : 'border-gray-100',
+                  ]"
+                  @dragstart="onVariantDragStart(idx)"
+                  @dragover.prevent
+                  @drop="onVariantDrop(idx)"
+                  @dragend="draggedVariantIndex = null"
+                >
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="h-10 flex-1 cursor-grab rounded border border-gray-200 bg-white text-gray-400 active:cursor-grabbing"
+                      title="Arrastrar variante"
+                    >
+                      <i class="fa fa-grip-vertical" />
+                    </button>
+                    <div class="flex flex-col gap-1">
+                      <button
+                        type="button"
+                        class="h-[18px] w-7 rounded border border-gray-200 bg-white text-[10px] text-gray-400 disabled:opacity-30"
+                        :disabled="idx === 0"
+                        title="Subir variante"
+                        @click="reorderVariant(idx, idx - 1)"
+                      >
+                        <i class="fa fa-chevron-up" />
+                      </button>
+                      <button
+                        type="button"
+                        class="h-[18px] w-7 rounded border border-gray-200 bg-white text-[10px] text-gray-400 disabled:opacity-30"
+                        :disabled="idx === fTalles.length - 1"
+                        title="Bajar variante"
+                        @click="reorderVariant(idx, idx + 1)"
+                      >
+                        <i class="fa fa-chevron-down" />
+                      </button>
+                    </div>
+                  </div>
                   <input
                     :value="item.talle"
                     class="input"
@@ -234,13 +296,13 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
                     @input="$emit('update:fTalles', updateTalle(idx, 'units', ($event.target as HTMLInputElement).value))"
                   />
                   <input
-                    :value="item.price || fPrecio"
+                    :value="item.price ?? ''"
                     type="number"
                     min="0"
                     step="0.01"
                     class="input"
                     placeholder="Precio"
-                    @input="$emit('update:fTalles', updateTalle(idx, 'price', Number(($event.target as HTMLInputElement).value)))"
+                    @input="$emit('update:fTalles', updateTalle(idx, 'price', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : null))"
                   />
                   <input
                     :value="item.stock"
@@ -253,7 +315,7 @@ function updateTalle(idx: number, field: keyof ProductSize, value: string | numb
                   <button type="button" class="btn-ghost" @click="$emit('removeTalle', idx)">
                     <i class="fa fa-trash"></i>
                   </button>
-                  <div class="sm:col-span-5 flex flex-col gap-2 rounded-lg border border-gray-100 bg-white p-2">
+                  <div class="sm:col-span-6 flex flex-col gap-2 rounded-lg border border-gray-100 bg-white p-2">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                       <div v-if="item.image" class="h-14 w-14 overflow-hidden rounded border border-gray-200 bg-gray-50 shrink-0">
                         <img :src="normalizeProductImageUrl(item.image)" alt="" class="h-full w-full object-cover" />
