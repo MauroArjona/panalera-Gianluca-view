@@ -232,7 +232,7 @@ watch(selectedSize, () => {
             ]"
           >
             <i :class="['fa text-xs', inStock ? 'fa-circle-check' : 'fa-circle-xmark']" />
-            {{ inStock ? `En stock (${currentStock})` : 'Sin stock' }}
+            {{ inStock ? 'En stock' : 'Sin stock' }}
           </span>
         </div>
 
@@ -280,7 +280,7 @@ watch(selectedSize, () => {
               </span>
               <span class="block text-sm text-brand font-semibold">${{ (variant.price ?? product.price).toFixed(2) }}</span>
               <span class="block text-xs text-gray-400">
-                {{ variant.stock > 0 ? `${variant.stock} disponibles` : 'Sin stock' }}
+                {{ variant.stock > 0 ? 'Disponible' : 'Sin stock' }}
               </span>
             </button>
           </div>

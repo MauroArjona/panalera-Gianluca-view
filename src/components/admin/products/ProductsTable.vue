@@ -38,13 +38,7 @@ const filteredProducts = computed(() => {
 
   if (props.search.trim()) {
     const q = props.search.trim().toLowerCase()
-    list = list.filter((p) =>
-      p.name.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
-      p.subcategory.toLowerCase().includes(q) ||
-      String(p.price).includes(q) ||
-      p.price.toFixed(2).includes(q),
-    )
+    list = list.filter((p) => p.name.toLowerCase().includes(q))
   }
 
   if (props.categoriaFilter) {
@@ -145,7 +139,7 @@ function sortIcon(field: string) {
         <input
           :value="search"
           type="text"
-          placeholder="Buscar por nombre, categoría, subcategoría o precio..."
+          placeholder="Buscar por nombre del producto..."
           class="input pl-9"
           @input="$emit('update:search', ($event.target as HTMLInputElement).value); resetPage()"
         />
