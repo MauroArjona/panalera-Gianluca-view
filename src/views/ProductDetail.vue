@@ -174,6 +174,7 @@ watch(selectedSize, () => {
             :src="productImage"
             :alt="product.name"
             class="w-full aspect-square object-cover"
+            decoding="async"
           />
         </div>
 
@@ -193,6 +194,7 @@ watch(selectedSize, () => {
               :alt="product.name"
               class="w-full h-full object-cover"
               loading="lazy"
+              decoding="async"
             />
           </button>
         </div>

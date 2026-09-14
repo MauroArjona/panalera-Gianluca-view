@@ -7,6 +7,7 @@ import type { Product } from '@/api/client'
 
 interface StaticCategoria {
   nombre: string
+  section: string
   label: string
   icon: string
   tone: string
@@ -16,6 +17,7 @@ interface StaticCategoria {
 const STATIC_CATEGORIAS: StaticCategoria[] = [
   {
     nombre: 'Panales',
+    section: 'panales',
     label: 'Pañales',
     icon: 'fa-baby',
     tone: 'bg-sky-50 text-sky-600 border-sky-100',
@@ -23,6 +25,7 @@ const STATIC_CATEGORIAS: StaticCategoria[] = [
   },
   {
     nombre: 'Higiene',
+    section: 'higiene',
     label: 'Higiene',
     icon: 'fa-hand-sparkles',
     tone: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -30,6 +33,7 @@ const STATIC_CATEGORIAS: StaticCategoria[] = [
   },
   {
     nombre: 'Accesorios',
+    section: 'accesorios',
     label: 'Accesorios',
     icon: 'fa-bottle-droplet',
     tone: 'bg-amber-50 text-amber-600 border-amber-100',
@@ -121,7 +125,7 @@ onMounted(async () => {
       <router-link
         v-for="cat in categorias"
         :key="cat.nombre"
-        :to="{ path: '/shop', query: { category: cat.nombre } }"
+        :to="{ path: '/shop', query: { section: cat.section } }"
         class="group rounded-lg border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition"
       >
         <div class="flex items-start justify-between gap-4">

@@ -48,6 +48,7 @@ export interface Product {
 
 export interface ProductFilters {
   category?: string
+  section?: string
   categoriaId?: number
   subcategoriaId?: number
   search?: string
@@ -134,6 +135,7 @@ export const productApi = {
   async list(filters: ProductFilters = {}): Promise<PaginatedResponse<Product>> {
     const params = new URLSearchParams()
     if (filters.category) params.set('category', filters.category)
+    if (filters.section) params.set('section', filters.section)
     if (filters.categoriaId) params.set('categoriaId', String(filters.categoriaId))
     if (filters.subcategoriaId) params.set('subcategoriaId', String(filters.subcategoriaId))
     if (filters.search) params.set('search', filters.search)
@@ -308,9 +310,65 @@ export const orderApi = {
   },
 }
 
+const MAX_UPLOAD_IMAGE_SIDE = 1400
+const UPLOAD_IMAGE_QUALITY = 0.82
+
+async function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('No se pudo procesar la imagen.'))
+    }
+    img.src = objectUrl
+  })
+}
+
+async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality))
+}
+
+async function compressImageForUpload(file: File): Promise<File> {
+  if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+    return file
+  }
+
+  try {
+    const img = await loadImageFromFile(file)
+    const scale = Math.min(1, MAX_UPLOAD_IMAGE_SIDE / Math.max(img.naturalWidth, img.naturalHeight))
+    const width = Math.max(1, Math.round(img.naturalWidth * scale))
+    const height = Math.max(1, Math.round(img.naturalHeight * scale))
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    if (!context) return file
+
+    canvas.width = width
+    canvas.height = height
+    context.drawImage(img, 0, 0, width, height)
+
+    const preferredType = file.type === 'image/png' ? 'image/png' : 'image/webp'
+    const blob = await canvasToBlob(canvas, preferredType, UPLOAD_IMAGE_QUALITY)
+      || await canvasToBlob(canvas, 'image/jpeg', UPLOAD_IMAGE_QUALITY)
+    if (!blob || blob.size >= file.size) return file
+
+    const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
+    const filename = file.name.replace(/\.[^.]+$/, '') || 'imagen'
+    return new File([blob], `${filename}.${extension}`, { type: blob.type, lastModified: Date.now() })
+  } catch {
+    return file
+  }
+}
+
 export async function uploadImage(file: File, onProgress?: (percent: number) => void): Promise<string> {
+  const uploadFile = await compressImageForUpload(file)
   const formData = new FormData()
-  formData.append('imagen', file)
+  formData.append('imagen', uploadFile)
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()

@@ -30,6 +30,8 @@ const unitPrice = computed(() => props.item.unitPrice ?? props.item.product.pric
         :src="productImage"
         :alt="item.product.name"
         class="w-20 h-20 object-cover rounded"
+        loading="lazy"
+        decoding="async"
       />
     </router-link>
 

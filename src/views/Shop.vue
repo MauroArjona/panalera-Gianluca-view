@@ -19,6 +19,7 @@ const sidebarOpen = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const filters = ref<ProductFilters>({
+  section: route.query.section as string | undefined,
   category: (route.query.category as string) || (route.query.categoria as string) || undefined,
   categoriaId: route.query.categoriaId ? Number(route.query.categoriaId) : undefined,
   subcategoriaId: route.query.subcategoriaId ? Number(route.query.subcategoriaId) : undefined,
@@ -148,12 +149,13 @@ const visibleSubcategorias = computed(() =>
 const activeFilterLabel = computed(() =>
   selectedSubcategoria.value?.nombre ||
   selectedCategoria.value?.nombre ||
+  (filters.value.section ? sectionStyles[filters.value.section as FilterSectionKey]?.title : '') ||
   filters.value.category ||
   '',
 )
 
 const hasActiveFilters = computed(() =>
-  !!(filters.value.category || filters.value.categoriaId || filters.value.subcategoriaId || filters.value.search),
+  !!(filters.value.section || filters.value.category || filters.value.categoriaId || filters.value.subcategoriaId || filters.value.search),
 )
 
 async function fetchCatalog() {
@@ -190,6 +192,7 @@ async function fetchProducts() {
 
 function syncUrlAndFetch() {
   const query: Record<string, string> = {}
+  if (filters.value.section) query.section = filters.value.section
   if (filters.value.categoriaId) query.categoriaId = String(filters.value.categoriaId)
   else if (filters.value.category) query.category = filters.value.category
   if (filters.value.subcategoriaId) query.subcategoriaId = String(filters.value.subcategoriaId)
@@ -212,6 +215,7 @@ function searchAsYouType() {
 
 function applyCategoria(categoria: Categoria) {
   const isActive = selectedCategoriaId.value === categoria.id && !filters.value.subcategoriaId
+  filters.value.section = undefined
   filters.value.category = undefined
   filters.value.categoriaId = isActive ? undefined : categoria.id
   filters.value.subcategoriaId = undefined
@@ -222,6 +226,7 @@ function applyCategoria(categoria: Categoria) {
 
 function applySubcategoria(subcategoria: Subcategoria) {
   const isActive = filters.value.subcategoriaId === subcategoria.id
+  filters.value.section = undefined
   filters.value.category = undefined
   filters.value.categoriaId = subcategoria.categoria_id
   filters.value.subcategoriaId = isActive ? undefined : subcategoria.id
@@ -244,6 +249,7 @@ watch(
   () => route.query,
   async (query) => {
     await fetchCatalog()
+    filters.value.section = query.section as string | undefined
     filters.value.category = (query.category as string) || (query.categoria as string) || undefined
     filters.value.categoriaId = query.categoriaId ? Number(query.categoriaId) : undefined
     filters.value.subcategoriaId = query.subcategoriaId ? Number(query.subcategoriaId) : undefined

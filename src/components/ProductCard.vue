@@ -61,6 +61,7 @@ function quickAddToCart() {
         :alt="product.name"
         class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
         loading="lazy"
+        decoding="async"
       />
 
       <!-- Overlay hover -->

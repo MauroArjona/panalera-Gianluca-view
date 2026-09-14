@@ -169,7 +169,7 @@ async function placeOrder() {
               :key="`${item.product.id}-${item.selectedSize}`"
               class="flex gap-4 py-3"
             >
-              <img :src="getProductImage(item.product)" :alt="item.product.name" class="w-14 h-14 rounded object-cover" />
+              <img :src="getProductImage(item.product)" :alt="item.product.name" class="w-14 h-14 rounded object-cover" loading="lazy" decoding="async" />
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-800">{{ item.product.name }}</p>
                 <p class="text-xs text-gray-400">{{ item.selectedSize }} Â· {{ item.selectedColor.name }} Â· Cantidad {{ item.quantity }}</p>
