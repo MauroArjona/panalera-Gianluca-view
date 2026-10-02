@@ -273,7 +273,7 @@ watch(selectedSize, () => {
           <div class="flex items-start gap-3 mb-3">
             <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">2</span>
             <div>
-              <p class="text-sm font-bold text-gray-800">Elegí la presentación</p>
+              <p class="text-sm font-bold text-gray-800">Elegí el tamaño</p>
               <p class="mt-0.5 text-xs text-gray-500">El precio, la foto y la disponibilidad cambian según tu elección.</p>
             </div>
           </div>
