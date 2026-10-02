@@ -238,21 +238,29 @@ watch(selectedSize, () => {
           </span>
         </div>
 
-        <!-- Talles (si existen) -->
-        <div v-if="sizesArray.length > 0" class="mb-5">
-          <p class="text-sm font-semibold text-gray-700 mb-2">
-            Talle: <span class="text-brand">{{ selectedSize }}</span>
-          </p>
+        <!-- Elegir talle -->
+        <div v-if="sizesArray.length > 0" class="mb-5 rounded-lg border border-sky-100 bg-sky-50/60 p-4">
+          <div class="flex items-start gap-3 mb-3">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">1</span>
+            <div>
+              <p class="text-sm font-bold text-gray-800">
+                Elegí el talle <span v-if="selectedSize" class="text-brand">· {{ selectedSize }}</span>
+              </p>
+              <p class="mt-0.5 text-xs text-gray-500">Después elegí el tamaño que necesitás.</p>
+            </div>
+          </div>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="size in sizesArray"
               :key="size"
+              type="button"
               :class="[
-                'px-3 py-1.5 border rounded text-sm font-medium transition',
+                'px-3 py-2 border rounded-md text-sm font-semibold transition',
                 selectedSize === size
                   ? 'border-brand bg-brand text-white'
                   : 'border-gray-300 text-gray-700 hover:border-brand',
               ]"
+              :aria-pressed="selectedSize === size"
               @click="selectedSize = size"
             >
               {{ size }}
@@ -260,21 +268,27 @@ watch(selectedSize, () => {
           </div>
         </div>
 
-        <div v-if="variantsForSelectedSize.length > 0" class="mb-5">
-          <p class="text-sm font-semibold text-gray-700 mb-2">
-            Presentación
-          </p>
+        <!-- Elegir presentación -->
+        <div v-if="variantsForSelectedSize.length > 0" class="mb-5 rounded-lg border border-sky-100 bg-white p-4 shadow-sm">
+          <div class="flex items-start gap-3 mb-3">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">2</span>
+            <div>
+              <p class="text-sm font-bold text-gray-800">Elegí la presentación</p>
+              <p class="mt-0.5 text-xs text-gray-500">El precio, la foto y la disponibilidad cambian según tu elección.</p>
+            </div>
+          </div>
           <div class="grid gap-2 sm:grid-cols-2">
             <button
               v-for="variant in variantsForSelectedSize"
               :key="variant.id ?? `${variant.talle}-${variant.units}-${variant.price}`"
               type="button"
               :class="[
-                'rounded-lg border p-3 text-left transition',
+                'rounded-lg border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-brand/40',
                 selectedVariant === variant
                   ? 'border-brand bg-sky-50 ring-1 ring-brand'
                   : 'border-gray-200 hover:border-brand/60',
               ]"
+              :aria-pressed="selectedVariant === variant"
               @click="selectVariant(variant)"
             >
               <span class="block text-sm font-bold text-gray-900">
@@ -285,6 +299,14 @@ watch(selectedSize, () => {
                 {{ variant.stock > 0 ? 'Disponible' : 'Sin stock' }}
               </span>
             </button>
+          </div>
+
+          <div v-if="selectedVariant" class="mt-3 flex items-center gap-2 rounded-md bg-sky-50 px-3 py-2 text-xs text-sky-800">
+            <i class="fa fa-circle-check" />
+            <span>
+              Elegiste: <strong>{{ selectedVariant.talle }}</strong><span v-if="selectedVariant.units"> · {{ selectedVariant.units }}</span>
+              <span> · ${{ currentPrice.toFixed(2) }}</span>
+            </span>
           </div>
         </div>
 

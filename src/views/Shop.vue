@@ -16,6 +16,7 @@ const catalogLoading = ref(false)
 const categorias = ref<Categoria[]>([])
 const subcategorias = ref<Subcategoria[]>([])
 const sidebarOpen = ref(false)
+const selectedSection = ref<FilterSectionKey | undefined>(route.query.section as FilterSectionKey | undefined)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const filters = ref<ProductFilters>({
@@ -133,6 +134,11 @@ const filterSections = computed(() => {
     .filter((section) => section.categorias.length > 0)
 })
 
+const categoriesInSelectedSection = computed(() => {
+  if (!selectedSection.value) return []
+  return filterSections.value.find((section) => section.key === selectedSection.value)?.categorias ?? []
+})
+
 function displayCategoriaName(nombre: string) {
   return normalizeLabel(nombre) === 'toallitas' ? 'Toallitas húmedas' : nombre
 }
@@ -153,6 +159,19 @@ const activeFilterLabel = computed(() =>
   filters.value.category ||
   '',
 )
+
+const selectedSectionLabel = computed(() =>
+  selectedSection.value ? sectionStyles[selectedSection.value].title : '',
+)
+
+const activeFilterChips = computed(() => {
+  const chips: Array<{ key: 'section' | 'categoria' | 'subcategoria' | 'search'; label: string }> = []
+  if (selectedSectionLabel.value) chips.push({ key: 'section', label: selectedSectionLabel.value })
+  if (selectedCategoria.value) chips.push({ key: 'categoria', label: displayCategoriaName(selectedCategoria.value.nombre) })
+  if (selectedSubcategoria.value) chips.push({ key: 'subcategoria', label: selectedSubcategoria.value.nombre })
+  if (filters.value.search) chips.push({ key: 'search', label: `Búsqueda: ${filters.value.search}` })
+  return chips
+})
 
 const hasActiveFilters = computed(() =>
   !!(filters.value.section || filters.value.category || filters.value.categoriaId || filters.value.subcategoriaId || filters.value.search),
@@ -216,6 +235,7 @@ function searchAsYouType() {
 function applyCategoria(categoria: Categoria) {
   const isActive = selectedCategoriaId.value === categoria.id && !filters.value.subcategoriaId
   filters.value.section = undefined
+  selectedSection.value = categoriaSection(categoria.nombre)
   filters.value.category = undefined
   filters.value.categoriaId = isActive ? undefined : categoria.id
   filters.value.subcategoriaId = undefined
@@ -227,6 +247,9 @@ function applyCategoria(categoria: Categoria) {
 function applySubcategoria(subcategoria: Subcategoria) {
   const isActive = filters.value.subcategoriaId === subcategoria.id
   filters.value.section = undefined
+  selectedSection.value = categoriaSection(
+    categorias.value.find((categoria) => categoria.id === subcategoria.categoria_id)?.nombre ?? '',
+  )
   filters.value.category = undefined
   filters.value.categoriaId = subcategoria.categoria_id
   filters.value.subcategoriaId = isActive ? undefined : subcategoria.id
@@ -235,7 +258,37 @@ function applySubcategoria(subcategoria: Subcategoria) {
   syncUrlAndFetch()
 }
 
+function applySection(section: FilterSectionKey) {
+  const isActive = selectedSection.value === section && filters.value.section === section && !filters.value.categoriaId
+  selectedSection.value = isActive ? undefined : section
+  filters.value.section = isActive ? undefined : section
+  filters.value.category = undefined
+  filters.value.categoriaId = undefined
+  filters.value.subcategoriaId = undefined
+  filters.value.search = undefined
+  filters.value.page = 1
+  syncUrlAndFetch()
+}
+
+function removeFilter(key: 'section' | 'categoria' | 'subcategoria' | 'search') {
+  if (key === 'search') filters.value.search = undefined
+  if (key === 'subcategoria') filters.value.subcategoriaId = undefined
+  if (key === 'categoria') {
+    filters.value.categoriaId = undefined
+    filters.value.subcategoriaId = undefined
+  }
+  if (key === 'section') {
+    selectedSection.value = undefined
+    filters.value.section = undefined
+    filters.value.categoriaId = undefined
+    filters.value.subcategoriaId = undefined
+  }
+  filters.value.page = 1
+  syncUrlAndFetch()
+}
+
 function clearFilters() {
+  selectedSection.value = undefined
   filters.value = { sortBy: 'newest', page: 1, perPage: 9 }
   router.replace({ query: {} })
   fetchProducts()
@@ -250,6 +303,10 @@ watch(
   async (query) => {
     await fetchCatalog()
     filters.value.section = query.section as string | undefined
+    selectedSection.value = (query.section as FilterSectionKey | undefined) ||
+      (filters.value.categoriaId
+        ? categoriaSection(categorias.value.find((cat) => cat.id === filters.value.categoriaId)?.nombre ?? '')
+        : undefined)
     filters.value.category = (query.category as string) || (query.categoria as string) || undefined
     filters.value.categoriaId = query.categoriaId ? Number(query.categoriaId) : undefined
     filters.value.subcategoriaId = query.subcategoriaId ? Number(query.subcategoriaId) : undefined
@@ -276,8 +333,8 @@ watch(
           - {{ activeFilterLabel }}
         </span>
       </h1>
-      <button class="lg:hidden btn-ghost border border-gray-200 text-sm" @click="sidebarOpen = !sidebarOpen">
-        <i class="fa fa-sliders mr-1" /> Filtros
+      <button class="lg:hidden btn-ghost border border-sky-200 text-sm" @click="sidebarOpen = !sidebarOpen">
+        <i class="fa fa-sliders mr-1" /> Filtros<span v-if="activeFilterChips.length" class="ml-1">({{ activeFilterChips.length }})</span>
       </button>
     </div>
 
@@ -295,31 +352,47 @@ watch(
         </button>
 
         <div class="rounded-lg border border-sky-100 bg-white p-4 shadow-sm">
-        <h2 class="text-lg font-bold text-gray-900 mb-1">Filtros</h2>
-        <p class="text-xs text-gray-500 mb-4">Elegí una categoría y después una marca.</p>
+        <div class="flex items-start justify-between gap-3 mb-1">
+          <h2 class="text-lg font-bold text-gray-900">Filtros</h2>
+          <button v-if="hasActiveFilters" class="text-xs font-semibold text-sky-600 hover:text-sky-800" @click="clearFilters">
+            Limpiar todo
+          </button>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Elegí una sección, después el tipo de producto y su marca.</p>
 
         <div class="space-y-1">
           <div v-if="catalogLoading" class="text-sm text-gray-400 px-2 py-1.5">
             Cargando categorías...
           </div>
-          <button
-            :class="[
-              'w-full text-left px-3 py-2 rounded font-semibold text-sm transition flex items-center gap-2',
-              !hasActiveFilters ? 'bg-brand text-white shadow-sm' : 'text-gray-700 hover:bg-sky-50',
-            ]"
-            @click="showAllProducts"
-          >
-            <i class="fa fa-border-all text-xs opacity-80" />
-            Todo
-          </button>
-          <div v-for="section in filterSections" :key="section.key" class="pt-3 first:pt-2">
-            <div :class="['flex items-center gap-2 px-3 py-2 rounded border text-sm font-bold', section.accent]">
+          <p class="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-sky-700">1. Sección</p>
+          <div class="grid grid-cols-1 gap-2">
+            <button
+              :class="[
+                'w-full text-left px-3 py-2.5 rounded-lg border text-sm font-bold transition flex items-center gap-2',
+                !selectedSection && !filters.categoriaId ? 'bg-brand text-white border-brand shadow-sm' : 'border-gray-100 text-gray-700 hover:bg-sky-50',
+              ]"
+              @click="showAllProducts"
+            >
+              <i class="fa fa-border-all text-xs opacity-80" /> Todo
+            </button>
+            <button
+              v-for="section in filterSections"
+              :key="section.key"
+              :class="[
+                'w-full text-left px-3 py-2.5 rounded-lg border text-sm font-bold transition flex items-center gap-2',
+                selectedSection === section.key ? 'bg-brand text-white border-brand shadow-sm' : section.accent,
+              ]"
+              @click="applySection(section.key)"
+            >
               <i :class="['fa', section.icon, 'text-xs']" />
               {{ section.title }}
-            </div>
+            </button>
+          </div>
 
-            <div class="mt-2 space-y-1">
-              <div v-for="cat in section.categorias" :key="cat.id">
+          <div v-if="selectedSection" class="mt-5 border-t border-sky-100 pt-4">
+            <p class="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-sky-700">2. Tipo de producto</p>
+            <div class="space-y-1">
+              <div v-for="cat in categoriesInSelectedSection" :key="cat.id">
                 <button
                   :class="[
                     'w-full text-left px-3 py-2 rounded font-semibold text-sm transition flex items-center justify-between gap-2',
@@ -341,8 +414,8 @@ watch(
                 </button>
 
                 <div v-if="selectedCategoriaId === cat.id && visibleSubcategorias.length" class="mt-2 mb-3 ml-3 space-y-1 border-l border-sky-100 pl-3">
-                  <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                    Marcas
+                  <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-sky-700">
+                    3. Elegí una marca
                   </p>
                   <button
                     v-for="sub in visibleSubcategorias"
@@ -361,10 +434,6 @@ watch(
             </div>
           </div>
         </div>
-
-        <button v-if="hasActiveFilters" class="text-xs text-red-500 hover:text-red-700 mt-4" @click="clearFilters">
-          <i class="fa fa-xmark mr-1" /> Limpiar filtros
-        </button>
         </div>
       </aside>
 
@@ -392,6 +461,19 @@ watch(
           </select>
         </div>
 
+        <div v-if="activeFilterChips.length" class="mb-5 flex flex-wrap items-center gap-2">
+          <span class="text-xs font-semibold text-gray-500">Viendo:</span>
+          <button
+            v-for="chip in activeFilterChips"
+            :key="chip.key"
+            class="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100"
+            @click="removeFilter(chip.key)"
+          >
+            {{ chip.label }} <i class="fa fa-xmark text-[10px]" />
+          </button>
+          <button class="text-xs font-semibold text-sky-600 hover:text-sky-800" @click="clearFilters">Limpiar todo</button>
+        </div>
+
         <p v-if="!loading && totalProducts > 0" class="text-xs text-gray-400 mb-4">
           {{ totalProducts }} producto{{ totalProducts !== 1 ? 's' : '' }} encontrado{{ totalProducts !== 1 ? 's' : '' }}
         </p>
@@ -408,8 +490,9 @@ watch(
 
         <div v-else-if="products.length === 0" class="text-center py-20 text-gray-400">
           <i class="fa fa-box-open text-5xl mb-4 block" />
-          <p class="text-lg font-medium">No se encontraron productos</p>
-          <button class="btn-outline mt-4 text-sm" @click="clearFilters">Limpiar filtros</button>
+          <p class="text-lg font-medium text-gray-600">No hay productos disponibles con estos filtros</p>
+          <p class="mt-2 text-sm">Probá cambiar de marca, categoría o volver a ver todo.</p>
+          <button class="btn-outline mt-4 text-sm" @click="clearFilters">Ver todos los productos</button>
         </div>
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
