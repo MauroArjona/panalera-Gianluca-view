@@ -244,9 +244,9 @@ watch(selectedSize, () => {
             <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">1</span>
             <div>
               <p class="text-sm font-bold text-gray-800">
-                Elegí el talle <span v-if="selectedSize" class="text-brand">· {{ selectedSize }}</span>
+                Elegí una opcion <span v-if="selectedSize" class="text-brand">· {{ selectedSize }}</span>
               </p>
-              <p class="mt-0.5 text-xs text-gray-500">Después elegí el tamaño que necesitás.</p>
+              <p class="mt-0.5 text-xs text-gray-500"></p>
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
@@ -269,7 +269,7 @@ watch(selectedSize, () => {
         </div>
 
         <!-- Elegir presentación -->
-        <div v-if="variantsForSelectedSize.length > 0" class="mb-5 rounded-lg border border-sky-100 bg-white p-4 shadow-sm">
+        <div v-if="variantsForSelectedSize.length > 1" class="mb-5 rounded-lg border border-sky-100 bg-white p-4 shadow-sm">
           <div class="flex items-start gap-3 mb-3">
             <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">2</span>
             <div>
