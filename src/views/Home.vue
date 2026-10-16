@@ -143,7 +143,7 @@ onMounted(async () => {
   </section>
 
   <section class="bg-sky-50/60 py-14">
-    <div class="max-w-7xl mx-auto px-4">
+    <div class="max-w-7xl mx-auto px-2">
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
         <div>
           <p class="text-sm font-semibold text-brand mb-1">Recomendados</p>
@@ -154,7 +154,7 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
         <div v-for="n in 3" :key="n" class="bg-white rounded shadow-sm animate-pulse">
           <div class="h-52 bg-gray-200 rounded-t" />
           <div class="p-4 space-y-2">
