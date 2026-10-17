@@ -67,6 +67,7 @@ function quickAddToCart() {
       <!-- Overlay hover -->
       <div class="product-overlay rounded">
         <div class="flex flex-col gap-2">
+          <!-- Botón de agregar al carrito 
           <button
             :disabled="!inStock"
             :class="[
@@ -77,7 +78,7 @@ function quickAddToCart() {
           >
             <i :class="['fas mr-1', inStock ? 'fa-cart-plus' : 'fa-circle-xmark']" />
             {{ inStock ? 'Agregar al carrito' : 'Sin stock' }}
-          </button>
+          </button> -->
 
           <!-- Navegar al detalle usando el ID numérico -->
           <router-link
