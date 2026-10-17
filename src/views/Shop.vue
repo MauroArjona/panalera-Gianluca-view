@@ -478,7 +478,7 @@ watch(
           {{ totalProducts }} producto{{ totalProducts !== 1 ? 's' : '' }} encontrado{{ totalProducts !== 1 ? 's' : '' }}
         </p>
 
-        <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2">
           <div v-for="n in 9" :key="n" class="bg-white rounded shadow-sm animate-pulse">
             <div class="h-52 bg-gray-200 rounded-t" />
             <div class="p-4 space-y-2">
@@ -495,7 +495,7 @@ watch(
           <button class="btn-outline mt-4 text-sm" @click="clearFilters">Ver todos los productos</button>
         </div>
 
-        <div v-else class="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div v-else class="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2">
           <ProductCard v-for="p in products" :key="p.id" :product="p" />
         </div>
 

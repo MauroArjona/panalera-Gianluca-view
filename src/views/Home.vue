@@ -154,7 +154,7 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
+      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2">
         <div v-for="n in 3" :key="n" class="bg-white rounded shadow-sm animate-pulse">
           <div class="h-52 bg-gray-200 rounded-t" />
           <div class="p-4 space-y-2">
@@ -170,7 +170,7 @@ onMounted(async () => {
         <p>No hay productos destacados por el momento.</p>
       </div>
 
-      <div v-else class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2">
         <ProductCard v-for="p in featured" :key="p.id" :product="p" />
       </div>
 
