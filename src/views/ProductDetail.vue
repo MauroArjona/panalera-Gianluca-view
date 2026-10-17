@@ -314,12 +314,12 @@ watch(selectedSize, () => {
         <div class="flex items-center gap-4">
           <div class="flex items-center border border-gray-300 rounded overflow-hidden">
             <button
-              class="w-10 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+              class="w-8 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
               @click="quantity = Math.max(1, quantity - 1)"
             >
               <i class="fa fa-minus text-xs" />
             </button>
-            <span class="w-12 text-center font-semibold text-gray-800">{{ quantity }}</span>
+            <span class="w-8 text-center font-semibold text-gray-800">{{ quantity }}</span>
             <button
               class="w-10 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
               @click="quantity = Math.min(currentStock, quantity + 1)"
@@ -330,7 +330,7 @@ watch(selectedSize, () => {
 
           <button
             :class="[
-              'btn-primary flex-1 py-3 text-base transition',
+              'btn-primary flex-1 py-2 text-base transition',
               addedToCart ? 'bg-brand-600' : '',
               !inStock ? 'opacity-50 cursor-not-allowed' : '',
             ]"
