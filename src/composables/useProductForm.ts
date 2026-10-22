@@ -85,7 +85,7 @@ export function useProductForm() {
 
   function populateForm(product: Product) {
     fNombre.value = product.name
-    fPrecio.value = product.price || undefined
+    fPrecio.value = product.generalPrice ?? undefined
     fPrecioAnterior.value = product.oldPrice ?? undefined
     fSubcategoriaId.value = product.subcategoriaId
     fTalles.value = product.talles.length

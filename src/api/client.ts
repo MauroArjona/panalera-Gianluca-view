@@ -29,6 +29,7 @@ export interface Product {
   id: number
   name: string
   price: number
+  generalPrice: number | null
   image: string
   images: string[]
   category: string
