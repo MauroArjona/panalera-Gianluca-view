@@ -58,7 +58,7 @@ export function useProductForm() {
         .map((item) => ({
           talle: item.talle.trim() || 'Unidad',
           stock: Number(item.stock ?? 0),
-          price: item.price ?? null,
+          price: fPrecio.value ?? item.price ?? null,
           units: item.units?.trim() ?? '',
           image: item.image?.trim() ?? '',
         }))
@@ -160,6 +160,13 @@ export function useProductForm() {
     fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value ?? null, units: '', image: '' })
   }
 
+  function setGeneralPrice(price: number | undefined) {
+    fPrecio.value = price
+    if (price === undefined) return
+
+    fTalles.value = fTalles.value.map((item) => ({ ...item, price }))
+  }
+
   function removeTalle(idx: number) {
     fTalles.value.splice(idx, 1)
     if (fTalles.value.length === 0) fTalles.value.push({ talle: '', stock: 0, price: fPrecio.value ?? null, units: '', image: '' })
@@ -169,6 +176,7 @@ export function useProductForm() {
     MAX_IMAGES,
     fNombre,
     fPrecio,
+    setGeneralPrice,
     fPrecioAnterior,
     fSubcategoriaId,
     fTalles,

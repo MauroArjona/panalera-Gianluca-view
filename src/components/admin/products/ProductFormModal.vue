@@ -220,6 +220,9 @@ function onVariantDrop(idx: number) {
                   placeholder="Vacío si cada variante tiene su precio"
                   @input="$emit('update:fPrecio', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
                 />
+                <p class="mt-1 text-xs text-gray-400">
+                  {{ fPrecio !== undefined ? 'Este precio se aplicará a todas las variantes.' : 'Dejalo vacío para asignar un precio distinto a cada variante.' }}
+                </p>
                 <p v-if="formErrors.precio" class="text-red-500 text-xs mt-1">{{ formErrors.precio }}</p>
               </div>
               <div>
@@ -296,12 +299,13 @@ function onVariantDrop(idx: number) {
                     @input="$emit('update:fTalles', updateTalle(idx, 'units', ($event.target as HTMLInputElement).value))"
                   />
                   <input
-                    :value="item.price ?? ''"
+                    :value="fPrecio ?? item.price ?? ''"
                     type="number"
                     min="0"
                     step="0.01"
-                    class="input"
-                    placeholder="Precio"
+                    :class="['input', fPrecio !== undefined ? 'cursor-not-allowed bg-gray-100 text-gray-400' : '']"
+                    :placeholder="fPrecio !== undefined ? 'Usa el precio general' : 'Precio individual'"
+                    :disabled="fPrecio !== undefined"
                     @input="$emit('update:fTalles', updateTalle(idx, 'price', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : null))"
                   />
                   <input

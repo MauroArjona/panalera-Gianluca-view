@@ -39,6 +39,10 @@ const variantsForSelectedSize = computed(() => {
   return product.value.talles.filter((item) => item.talle === selectedSize.value)
 })
 
+function isSizeAvailable(size: string) {
+  return product.value?.talles.some((item) => item.talle === size && item.stock > 0) ?? false
+}
+
 const currentPrice = computed(() => selectedVariant.value?.price ?? product.value?.price ?? 0)
 const currentStock = computed(() => selectedVariant.value?.stock ?? product.value?.stock ?? 0)
 const currentImage = computed(() =>
@@ -46,6 +50,7 @@ const currentImage = computed(() =>
 )
 
 function selectVariant(variant: ProductSize) {
+  if (variant.stock <= 0) return
   selectedVariant.value = variant
   selectedSize.value = variant.talle
   quantity.value = Math.min(quantity.value, Math.max(1, variant.stock))
@@ -68,7 +73,7 @@ async function loadProduct(id: string) {
   try {
     product.value = await productApi.getById(numId)
 
-    selectedVariant.value = product.value.talles[0] ?? null
+    selectedVariant.value = product.value.talles.find((item) => item.stock > 0) ?? product.value.talles[0] ?? null
     selectedSize.value = selectedVariant.value?.talle ?? sizesArray.value[0] ?? ''
     if (selectedVariant.value?.image) selectedImage.value = normalizeProductImageUrl(selectedVariant.value.image)
 
@@ -126,8 +131,9 @@ watch(productImages, (images) => {
 
 watch(selectedSize, () => {
   const options = variantsForSelectedSize.value
-  if (options[0] && !options.some((variant) => variant === selectedVariant.value)) {
-    selectVariant(options[0])
+  const availableVariant = options.find((variant) => variant.stock > 0)
+  if (availableVariant && !options.some((variant) => variant === selectedVariant.value)) {
+    selectVariant(availableVariant)
   }
 })
 </script>
@@ -255,15 +261,21 @@ watch(selectedSize, () => {
               :key="size"
               type="button"
               :class="[
-                'px-3 py-2 border rounded-md text-sm font-semibold transition',
+                'relative overflow-hidden px-3 py-2 border rounded-md text-sm font-semibold transition',
                 selectedSize === size
                   ? 'border-brand bg-brand text-white'
-                  : 'border-gray-300 text-gray-700 hover:border-brand',
+                  : isSizeAvailable(size) ? 'border-gray-300 text-gray-700 hover:border-brand' : 'border-gray-200 bg-gray-100 text-gray-400 line-through cursor-not-allowed',
               ]"
               :aria-pressed="selectedSize === size"
+              :disabled="!isSizeAvailable(size)"
               @click="selectedSize = size"
             >
-              {{ size }}
+              <span class="relative z-10">{{ size }}</span>
+              <span
+                v-if="!isSizeAvailable(size)"
+                aria-hidden="true"
+                class="absolute left-[-20%] top-1/2 h-px w-[140%] -rotate-12 bg-gray-400/80"
+              />
             </button>
           </div>
         </div>
@@ -283,12 +295,13 @@ watch(selectedSize, () => {
               :key="variant.id ?? `${variant.talle}-${variant.units}-${variant.price}`"
               type="button"
               :class="[
-                'rounded-lg border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-brand/40',
+                'relative overflow-hidden rounded-lg border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-brand/40',
                 selectedVariant === variant
                   ? 'border-brand bg-sky-50 ring-1 ring-brand'
-                  : 'border-gray-200 hover:border-brand/60',
+                  : variant.stock > 0 ? 'border-gray-200 hover:border-brand/60' : 'border-gray-200 bg-gray-50 text-gray-400 line-through cursor-not-allowed',
               ]"
               :aria-pressed="selectedVariant === variant"
+              :disabled="variant.stock <= 0"
               @click="selectVariant(variant)"
             >
               <span class="block text-sm font-bold text-gray-900">
@@ -298,6 +311,11 @@ watch(selectedSize, () => {
               <span class="block text-xs text-gray-400">
                 {{ variant.stock > 0 ? 'Disponible' : 'Sin stock' }}
               </span>
+              <span
+                v-if="variant.stock <= 0"
+                aria-hidden="true"
+                class="absolute left-[-15%] top-1/2 h-px w-[130%] -rotate-12 bg-gray-400/80"
+              />
             </button>
           </div>
 

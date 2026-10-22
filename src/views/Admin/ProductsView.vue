@@ -211,7 +211,7 @@ async function toggleStock(product: Product) {
       :carrusel-count="carruselCount"
       :form-errors="form.formErrors.value"
       @update:f-nombre="form.fNombre.value = $event"
-      @update:f-precio="form.fPrecio.value = $event"
+      @update:f-precio="form.setGeneralPrice($event)"
       @update:f-precio-anterior="form.fPrecioAnterior.value = $event"
       @update:f-subcategoria-id="form.fSubcategoriaId.value = $event"
       @update:f-talles="form.fTalles.value = $event"
