@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import CartItemComponent from '@/components/CartItem.vue'
 import { getWhatsappOrderUrl } from '@/composables/useWhatsappOrder'
 
 const cart = useCartStore()
+const router = useRouter()
 
 const whatsappPhone = import.meta.env.VITE_WHATSAPP_PHONE?.trim() ?? ''
 const siteUrl = (import.meta.env.VITE_SITE_URL ?? window.location.origin).replace(/\/$/, '')
@@ -19,11 +21,31 @@ const whatsappUrl = computed(() =>
     productUrl: (item) => `${siteUrl}/product/${item.product.id}`,
   })
 )
+
+function closeCart() {
+  const previousPath = window.history.state.back
+  if (typeof previousPath === 'string' && previousPath.startsWith('/')) {
+    router.back()
+    return
+  }
+  router.push('/shop')
+}
 </script>
 
 <template>
   <div class="max-w-7xl mx-auto px-4 py-10">
-    <h1 class="text-2xl font-bold text-gray-800 mb-8">Mi carrito</h1>
+    <div class="mb-8 flex items-center justify-between gap-4">
+      <h1 class="text-2xl font-bold text-gray-800">Mi carrito</h1>
+      <button
+        type="button"
+        class="flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+        aria-label="Cerrar carrito"
+        title="Cerrar carrito"
+        @click="closeCart"
+      >
+        <i class="fa fa-xmark text-lg" />
+      </button>
+    </div>
 
     <!-- Carrito vacío -->
     <div v-if="cart.items.length === 0" class="text-center py-24">
