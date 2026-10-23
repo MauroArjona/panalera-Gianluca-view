@@ -4,7 +4,6 @@ import { useCartStore } from '@/stores/cart'
 import { useToast } from '@/composables/useToast'
 import { getProductImage } from '@/utils/productImage'
 import type { Product } from '@/api/client'
-import type { ColorDot } from '@/types'
 
 const props = defineProps<{ product: Product }>()
 const cart   = useCartStore()
@@ -40,8 +39,7 @@ const sizesArray = computed<string[]>(() => {
 
 function quickAddToCart() {
   if (!inStock.value) return
-  const color: ColorDot = { name: '', hex: '#000000' }
-  cart.add(props.product, 1, firstAvailableVariant.value?.talle ?? sizesArray.value[0] ?? '', color, firstAvailableVariant.value)
+  cart.add(props.product, 1, firstAvailableVariant.value?.talle ?? sizesArray.value[0] ?? '', firstAvailableVariant.value)
   show(`"${props.product.name}" agregado al carrito`, 'success')
 }
 </script>

@@ -21,6 +21,14 @@ function getPublicProductImage(item: CartItem) {
   return image.startsWith('http') ? image : ''
 }
 
+function isDiaperProduct(item: CartItem) {
+  const label = `${item.product.category} ${item.product.subcategory}`
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+  return label.includes('panal')
+}
+
 
 export function buildWhatsappOrderMessage({
   items,
@@ -36,9 +44,8 @@ export function buildWhatsappOrderMessage({
       const image = getPublicProductImage(item)
       const unitPrice = item.unitPrice ?? product.price
       const details = [
-        item.selectedSize ? `Talle: ${item.selectedSize}` : '',
+        isDiaperProduct(item) && item.selectedSize ? `Talle: ${item.selectedSize}` : '',
         item.selectedVariant?.units ? `Presentación: ${item.selectedVariant.units}` : '',
-        item.selectedColor?.name ? `Color: ${item.selectedColor.name}` : '',
       ].filter(Boolean)
 
       return [

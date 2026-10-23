@@ -7,7 +7,6 @@ import { productApi } from '@/api/client'
 import { getProductImage, normalizeProductImageUrl } from '@/utils/productImage'
 import ProductCard from '@/components/ProductCard.vue'
 import type { Product, ProductSize } from '@/api/client'
-import type { ColorDot } from '@/types'
 
 const route = useRoute()
 const cart  = useCartStore()
@@ -20,7 +19,6 @@ const error        = ref(false)
 
 const selectedSize  = ref('')
 const selectedVariant = ref<ProductSize | null>(null)
-const selectedColor = ref<ColorDot>({ name: '', hex: '#000000' })
 const quantity      = ref(1)
 const addedToCart   = ref(false)
 const selectedImage = ref('')
@@ -77,9 +75,6 @@ async function loadProduct(id: string) {
     selectedSize.value = selectedVariant.value?.talle ?? sizesArray.value[0] ?? ''
     if (selectedVariant.value?.image) selectedImage.value = normalizeProductImageUrl(selectedVariant.value.image)
 
-    // El backend no tiene colores por producto — inicializar vacío
-    selectedColor.value = { name: '', hex: '#000000' }
-
     // Productos relacionados: misma categoría, excluyendo el actual
     const res = await productApi.list({
       category: product.value.category,
@@ -102,7 +97,7 @@ watch(
 
 function addToCart() {
   if (!product.value) return
-  cart.add(product.value, quantity.value, selectedSize.value, selectedColor.value, selectedVariant.value)
+  cart.add(product.value, quantity.value, selectedSize.value, selectedVariant.value)
   addedToCart.value = true
   show(`"${product.value.name}" agregado al carrito!`, 'success')
   setTimeout(() => (addedToCart.value = false), 2000)

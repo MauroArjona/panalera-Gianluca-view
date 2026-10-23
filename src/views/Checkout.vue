@@ -37,6 +37,22 @@ const address = reactive<ShippingAddress>({
   country: '',
 })
 
+function isDiaperItem(item: typeof cart.items[number]) {
+  const label = `${item.product.category} ${item.product.subcategory}`
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+  return label.includes('panal')
+}
+
+function itemDetails(item: typeof cart.items[number]) {
+  const details = [
+    isDiaperItem(item) && item.selectedSize ? `Talle: ${item.selectedSize}` : '',
+    item.selectedVariant?.units ? `Presentación: ${item.selectedVariant.units}` : '',
+  ].filter(Boolean)
+  return details.join(' - ')
+}
+
 async function placeOrder() {
   if (cart.items.length === 0) return
   submitting.value = true
@@ -46,7 +62,7 @@ async function placeOrder() {
         productId: i.product.id,
         quantity: i.quantity,
         price: i.unitPrice ?? i.product.price,
-        size: [i.selectedSize, i.selectedVariant?.units].filter(Boolean).join(' - '),
+        size: itemDetails(i),
       })),
       total: cart.total,
       estado: 'pendiente',
@@ -172,7 +188,9 @@ async function placeOrder() {
               <img :src="getProductImage(item.product)" :alt="item.product.name" class="w-14 h-14 rounded object-cover" loading="lazy" decoding="async" />
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-800">{{ item.product.name }}</p>
-                <p class="text-xs text-gray-400">{{ item.selectedSize }} Â· {{ item.selectedColor.name }} Â· Cantidad {{ item.quantity }}</p>
+                <p class="text-xs text-gray-400">
+                  <span v-if="itemDetails(item)">{{ itemDetails(item) }} - </span>Cantidad {{ item.quantity }}
+                </p>
               </div>
               <p class="font-semibold text-gray-800 text-sm">${{ ((item.unitPrice ?? item.product.price) * item.quantity).toFixed(2) }}</p>
             </div>

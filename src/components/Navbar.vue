@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
@@ -27,6 +27,14 @@ const isActive = computed(() => (path: string) => {
 function closeAll() {
   mobileOpen.value = false
 }
+
+watch(mobileOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = ''
+})
 </script>
 
 <template>
@@ -61,6 +69,7 @@ function closeAll() {
             to="/cart"
             class="relative p-2 rounded hover:bg-gray-100 transition"
             aria-label="Cart"
+            @click="closeAll"
           >
             <i class="fa fa-cart-arrow-down text-gray-700" />
             <span
@@ -113,10 +122,32 @@ function closeAll() {
 
     </div>
 
+    <!-- Capa que bloquea el contenido mientras el menú está abierto -->
+    <div
+      v-if="mobileOpen"
+      class="fixed inset-0 z-40 bg-black/50 md:hidden"
+      aria-hidden="true"
+      @click="closeAll"
+    />
+
     <!-- Mobile menu -->
-    <transition name="slide-down">
-      <div v-if="mobileOpen" class="md:hidden bg-white border-t border-gray-100 px-4 pb-4">
-        <ul class="flex flex-col gap-1 pt-2">
+    <transition name="slide-left">
+      <aside v-if="mobileOpen" class="fixed inset-y-0 right-0 z-[60] flex w-[88vw] max-w-sm flex-col bg-white shadow-2xl md:hidden">
+        <div class="flex items-center justify-between border-b border-sky-100 px-5 py-4">
+          <Logo />
+          <button
+            type="button"
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-50 text-gray-600 transition hover:bg-sky-100"
+            aria-label="Cerrar menú"
+            @click="closeAll"
+          >
+            <i class="fa fa-xmark text-lg" />
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-5 py-5">
+          <p class="mb-3 text-xs font-bold uppercase tracking-wide text-sky-600">Navegación</p>
+          <ul class="flex flex-col gap-1">
           <li v-for="link in navLinks" :key="link.to">
             <router-link
               :to="link.to"
@@ -130,17 +161,8 @@ function closeAll() {
             </router-link>
           </li>
           <li v-if="auth.isAuthenticated">
-            <!-- <router-link
-              to="/orders"
-              class="block px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-50"
-              @click="mobileOpen = false"
-            >
-              <i class="fa fa-box mr-2 text-brand" />Mis Pedidos
-            </router-link> -->
-          </li>
-          <li v-if="auth.isAuthenticated">
             <button
-              class="w-full text-left px-3 py-2 rounded text-sm font-medium text-red-500 hover:bg-red-50 transition"
+              class="mt-3 w-full border-t border-gray-100 px-3 pt-5 text-left text-sm font-medium text-red-500 transition hover:text-red-600"
               @click="auth.logout(); mobileOpen = false; $router.push('/')"
             >
               <i class="fa fa-arrow-right-from-bracket mr-2" />Cerrar sesión
@@ -155,20 +177,25 @@ function closeAll() {
               <i class="fa fa-user mr-2" />Iniciar Sesión
             </router-link>
           </li>
-        </ul>
-      </div>
+          </ul>
+        </div>
+
+        <router-link to="/cart" class="mx-5 mb-5 flex items-center justify-between rounded-lg bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700" @click="closeAll">
+          <span><i class="fa fa-cart-shopping mr-2" /> Ver carrito</span>
+          <span v-if="cart.totalItems" class="rounded-full bg-brand px-2 py-0.5 text-xs text-white">{{ cart.totalItems }}</span>
+        </router-link>
+      </aside>
     </transition>
   </nav>
 </template>
 
 <style scoped>
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: all 0.25s ease;
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.25s ease;
 }
-.slide-down-enter-from,
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(100%);
 }
 </style>

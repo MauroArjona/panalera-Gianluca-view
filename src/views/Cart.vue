@@ -65,7 +65,7 @@ function closeCart() {
         <div class="bg-white rounded-lg shadow-sm p-6">
           <CartItemComponent
             v-for="(item, i) in cart.items"
-            :key="`${item.product.id}-${item.selectedSize}-${item.selectedColor?.hex ?? 'nc'}`"
+            :key="`${item.product.id}-${item.selectedSize}-${item.selectedVariant?.id ?? item.selectedVariant?.units ?? 'base'}`"
             :item="item"
             :index="i"
             @remove="cart.remove"

@@ -20,6 +20,15 @@ const productImage = computed(() =>
 )
 
 const unitPrice = computed(() => props.item.unitPrice ?? props.item.product.price)
+const isDiaperProduct = computed(() => {
+  const label = `${props.item.product.category} ${props.item.product.subcategory}`
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+  return label.includes('panal')
+})
+const showSize = computed(() => isDiaperProduct.value && Boolean(props.item.selectedSize))
+const showPresentation = computed(() => Boolean(props.item.selectedVariant?.units))
 </script>
 
 <template>
@@ -44,18 +53,10 @@ const unitPrice = computed(() => props.item.unitPrice ?? props.item.product.pric
         {{ item.product.name }}
       </router-link>
 
-      <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
-        <span v-if="item.selectedSize">Talle: {{ item.selectedSize }}</span>
-        <span v-if="item.selectedVariant?.units">Â· {{ item.selectedVariant.units }}</span>
-        <span v-if="item.selectedSize && item.selectedColor?.hex">·</span>
-        <span v-if="item.selectedColor?.hex" class="flex items-center gap-1">
-          Color:
-          <span
-            :style="{ background: item.selectedColor.hex }"
-            class="inline-block w-3 h-3 rounded-full border border-gray-300"
-          />
-          {{ item.selectedColor.name }}
-        </span>
+      <div v-if="showSize || showPresentation" class="flex items-center gap-2 mt-1 text-xs text-gray-500">
+        <span v-if="showSize">Talle: {{ item.selectedSize }}</span>
+        <span v-if="showSize && showPresentation">-</span>
+        <span v-if="showPresentation">{{ isDiaperProduct ? item.selectedVariant?.units : `Presentación: ${item.selectedVariant?.units}` }}</span>
       </div>
 
       <!-- Qty controls + price -->
